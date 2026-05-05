@@ -87,35 +87,43 @@
           <span>GymBud</span>
         </div>
 
+        <!-- Language toggle -->
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+          <button
+            class="btn btn-ghost btn-sm"
+            @click="setLang(lang === 'en' ? 'bg' : 'en')"
+            :title="lang === 'en' ? 'Switch to Bulgarian' : 'Смени на английски'"
+            style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; letter-spacing: 0.5px"
+            x-text="lang === 'en' ? 'EN' : 'BG'"
+          ></button>
+        </div>
+
         <!-- Error -->
         <div x-show="error" class="error-box" x-text="error"></div>
 
         <!-- Login Form -->
         <div>
-          <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px">
-            Welcome back
-          </h2>
+          <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px" x-text="t('welcome_back')"></h2>
           <p
             style="color: var(--text3); font-size: 0.85rem; margin-bottom: 20px"
-          >
-            Sign in to your account
-          </p>
+            x-text="t('sign_in_desc')"
+          ></p>
           <div class="form-group">
-            <label class="form-label">Email</label>
+            <label class="form-label" x-text="t('label_email')"></label>
             <input
               type="email"
               x-model="email"
               @keyup.enter="login()"
-              placeholder="you@example.com"
+              :placeholder="t('placeholder_email')"
             />
           </div>
           <div class="form-group">
-            <label class="form-label">Password</label>
+            <label class="form-label" x-text="t('label_password')"></label>
             <input
               type="password"
               x-model="password"
               @keyup.enter="login()"
-              placeholder="••••••••"
+              :placeholder="t('placeholder_password')"
             />
           </div>
           <button
@@ -124,8 +132,8 @@
             @click="login()"
             :disabled="loading"
           >
-            <span x-show="!loading">Sign In</span>
-            <span x-show="loading">Signing in…</span>
+            <span x-show="!loading" x-text="t('btn_sign_in')"></span>
+            <span x-show="loading" x-text="t('btn_signing_in')"></span>
           </button>
         </div>
       </div>
@@ -134,6 +142,7 @@
     <script type="module">
       import Alpine from "https://cdn.jsdelivr.net/npm/alpinejs@3/dist/module.esm.js";
       import { auth } from "./js/firebase.js";
+      import { translations } from "./js/i18n.js";
       import {
         signInWithEmailAndPassword,
         onAuthStateChanged,
@@ -149,11 +158,23 @@
         password: "",
         loading: false,
         error: "",
+        lang: localStorage.getItem("gymbudy-lang") || "en",
+
+        t(key) {
+          const tr = translations[this.lang] ?? translations.en;
+          const entry = tr[key] ?? translations.en[key];
+          return entry ?? key;
+        },
+
+        setLang(langCode) {
+          this.lang = langCode;
+          localStorage.setItem("gymbudy-lang", langCode);
+        },
 
         async login() {
           this.error = "";
           if (!this.email || !this.password) {
-            this.error = "Please fill in all fields.";
+            this.error = this.t("error_fill_fields");
             return;
           }
           this.loading = true;
@@ -169,17 +190,14 @@
 
         _friendly(code) {
           const map = {
-            "auth/user-not-found": "No account found with that email.",
-            "auth/wrong-password": "Incorrect password.",
-            "auth/invalid-credential": "Invalid email or password.",
-            "auth/email-already-in-use":
-              "An account with this email already exists.",
-            "auth/too-many-requests":
-              "Too many attempts. Please try again later.",
-            "auth/network-request-failed":
-              "Network error. Check your connection.",
+            "auth/user-not-found": this.t("error_user_not_found"),
+            "auth/wrong-password": this.t("error_wrong_password"),
+            "auth/invalid-credential": this.t("error_invalid_credential"),
+            "auth/email-already-in-use": this.t("error_email_in_use"),
+            "auth/too-many-requests": this.t("error_too_many_requests"),
+            "auth/network-request-failed": this.t("error_network"),
           };
-          return map[code] ?? "An error occurred. Please try again.";
+          return map[code] ?? this.t("error_generic");
         },
       }));
 

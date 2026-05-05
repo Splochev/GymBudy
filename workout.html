@@ -47,7 +47,7 @@
             <rect x="16" y="7" width="3" height="10" rx="1" />
             <line x1="8" y1="12" x2="16" y2="12" />
           </svg>
-          <p style="font-size: 0.9rem">Loading GymBud…</p>
+          <p style="font-size: 0.9rem" x-text="$store.gym.t('loading')"></p>
         </div>
       </div>
 
@@ -71,7 +71,7 @@
             <button
               class="btn-icon"
               @click="$store.gym.sidebarOpen = !$store.gym.sidebarOpen"
-              title="Toggle sidebar"
+              :title="$store.gym.t('toggle_sidebar')"
             >
               <svg
                 style="width: 18px; height: 18px"
@@ -142,39 +142,26 @@
                   <rect x="16" y="7" width="3" height="10" rx="1" />
                   <line x1="8" y1="12" x2="16" y2="12" />
                 </svg>
-                Workouts
-              </button>
-              <button
-                @click="$store.gym.switchView('history')"
-                :style="$store.gym.view==='history' ? 'color:var(--accent);background:var(--accent-bg);padding:8px 16px;border-radius:4px;display: flex;align-items: center;gap: 6px;' : 'color:var(--text3);display: flex;align-items: center;gap: 6px;'"
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 6px;
-                  padding: 8px 16px;
-                  border-radius: 4px;
-                  font-size: 0.8rem;
-                  font-weight: 500;
-                  transition: var(--trans);
-                "
-              >
-                <svg
-                  style="width: 14px; height: 14px; flex-shrink: 0"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M3 3v5h5" />
-                  <path d="M3.05 13A9 9 0 106 5.3L3 8" />
-                  <path d="M12 7v5l4 2" />
-                </svg>
-                History
+                <span x-text="$store.gym.t('workouts')"></span>
               </button>
             </div>
 
             <!-- Spacer -->
             <div style="flex: 1"></div>
+
+            <!-- Language toggle -->
+            <button
+              class="btn btn-ghost btn-sm"
+              @click="$store.gym.setLang($store.gym.lang === 'en' ? 'bg' : 'en')"
+              :title="$store.gym.lang === 'en' ? 'Switch to Bulgarian' : 'Смени на английски'"
+              style="
+                font-size: 0.75rem;
+                font-weight: 700;
+                padding: 4px 10px;
+                letter-spacing: 0.5px;
+              "
+              x-text="$store.gym.lang === 'en' ? 'EN' : 'BG'"
+            ></button>
 
             <!-- User info + logout -->
             <div style="display: flex; align-items: center; gap: 8px">
@@ -185,7 +172,7 @@
               <button
                 class="btn-icon"
                 @click="$store.gym.logout()"
-                title="Sign out"
+                :title="$store.gym.t('sign_out')"
               >
                 <svg
                   style="width: 16px; height: 16px"
@@ -219,6 +206,109 @@
                 overflow: hidden;
               "
             >
+              <!-- ── Mobile-only sidebar header ──────────────────── -->
+              <div
+                class="sidebar-mobile-header"
+                style="display: none; flex-direction: column; flex-shrink: 0"
+              >
+                <!-- Brand row -->
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 14px 16px;
+                    border-bottom: 1px solid var(--border);
+                  "
+                >
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 8px;
+                      font-size: 1.1rem;
+                      font-weight: 700;
+                      color: var(--accent);
+                      letter-spacing: -0.5px;
+                    "
+                  >
+                    <svg
+                      style="width: 24px; height: 24px"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect x="2" y="9" width="3" height="6" rx="1" />
+                      <rect x="19" y="9" width="3" height="6" rx="1" />
+                      <rect x="5" y="7" width="3" height="10" rx="1" />
+                      <rect x="16" y="7" width="3" height="10" rx="1" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
+                    GymBud
+                  </div>
+                  <button
+                    class="btn-icon"
+                    @click="$store.gym.sidebarOpen = false"
+                    title="Close menu"
+                  >
+                    <svg
+                      style="width: 18px; height: 18px"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Nav tabs -->
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    padding: 8px;
+                    border-bottom: 1px solid var(--border);
+                    gap: 2px;
+                  "
+                >
+                  <button
+                    @click="$store.gym.switchView('workout'); $store.gym.sidebarOpen = false"
+                    :style="$store.gym.view === 'workout' ? 'background:var(--accent-bg);color:var(--accent);display: flex;align-items: center;gap: 10px;padding: 14px 12px;border-radius: var(--radius);' : 'color:var(--text3);display: flex;align-items: center;gap: 10px;padding: 14px 12px;border-radius: var(--radius);'"
+                    style="
+                      width: 100%;
+                      display: flex;
+                      align-items: center;
+                      gap: 10px;
+                      padding: 14px 12px;
+                      border-radius: var(--radius);
+                      font-size: 0.875rem;
+                      font-weight: 600;
+                      transition: var(--trans);
+                      text-align: left;
+                    "
+                  >
+                    <svg
+                      style="width: 16px; height: 16px; flex-shrink: 0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect x="2" y="9" width="3" height="6" rx="1" />
+                      <rect x="19" y="9" width="3" height="6" rx="1" />
+                      <rect x="5" y="7" width="3" height="10" rx="1" />
+                      <rect x="16" y="7" width="3" height="10" rx="1" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
+                    <span x-text="$store.gym.t('workouts')"></span>
+                  </button>
+                </div>
+              </div>
+              <!-- /mobile sidebar header -->
+
               <!-- Programs section -->
               <div
                 style="
@@ -242,12 +332,12 @@
                       color: var(--text3);
                       font-weight: 600;
                     "
-                    >Programs</span
-                  >
+                    x-text="$store.gym.t('programs')"
+                  ></span>
                   <button
                     class="btn-icon"
                     style="width: 24px; height: 24px"
-                    title="New program"
+                    :title="$store.gym.t('new_program')"
                     @click="$store.gym.openModal('addProgram')"
                   >
                     <svg
@@ -262,14 +352,17 @@
                   </button>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 2px">
-                  <template x-for="p in $store.gym.programs" :key="p.id">
+                  <template
+                    x-for="program in $store.gym.programs"
+                    :key="program.id"
+                  >
                     <div
                       class="sidebar-item"
-                      :class="{ active: $store.gym.selectedProgramId === p.id }"
-                      @click="$store.gym.selectProgram(p.id)"
+                      :class="{ active: $store.gym.selectedProgramId === program.id }"
+                      @click="$store.gym.selectProgram(program.id)"
                     >
                       <span
-                        x-text="p.name"
+                        x-text="program.name"
                         style="
                           flex: 1;
                           overflow: hidden;
@@ -282,7 +375,7 @@
                           class="btn-icon"
                           style="width: 22px; height: 22px"
                           title="Edit"
-                          @click.stop="$store.gym.openModal('editProgram', p.id)"
+                          @click.stop="$store.gym.openModal('editProgram', program.id)"
                         >
                           <svg
                             style="width: 12px; height: 12px"
@@ -307,7 +400,7 @@
                             color: var(--danger);
                           "
                           title="Delete"
-                          @click.stop="$store.gym.openModal('deleteProgram', p.id)"
+                          @click.stop="$store.gym.openModal('deleteProgram', program.id)"
                         >
                           <svg
                             style="width: 12px; height: 12px"
@@ -332,9 +425,8 @@
                       color: var(--text3);
                       padding: 8px 12px;
                     "
-                  >
-                    No programs yet. Create one!
-                  </div>
+                    x-text="$store.gym.t('no_programs')"
+                  ></div>
                 </div>
               </div>
 
@@ -364,12 +456,12 @@
                       color: var(--text3);
                       font-weight: 600;
                     "
-                    >Workout Days</span
-                  >
+                    x-text="$store.gym.t('workout_days')"
+                  ></span>
                   <button
                     class="btn-icon"
                     style="width: 24px; height: 24px"
-                    title="New day"
+                    :title="$store.gym.t('new_day')"
                     :disabled="!$store.gym.selectedProgramId"
                     @click="$store.gym.openModal('addSession')"
                   >
@@ -385,14 +477,17 @@
                   </button>
                 </div>
                 <div style="flex: 1; overflow-y: auto; padding: 0 8px 8px">
-                  <template x-for="s in $store.gym.sessions" :key="s.id">
+                  <template
+                    x-for="session in $store.gym.sessions"
+                    :key="session.id"
+                  >
                     <div
                       class="sidebar-item"
-                      :class="{ active: $store.gym.selectedSessionId === s.id }"
-                      @click="$store.gym.selectSession(s.id)"
+                      :class="{ active: $store.gym.selectedSessionId === session.id }"
+                      @click="$store.gym.selectSession(session.id); if(window.innerWidth<=600) $store.gym.sidebarOpen=false"
                     >
                       <span
-                        x-text="s.name"
+                        x-text="session.name"
                         style="
                           flex: 1;
                           overflow: hidden;
@@ -405,7 +500,7 @@
                           class="btn-icon"
                           style="width: 22px; height: 22px"
                           title="Edit"
-                          @click.stop="$store.gym.openModal('editSession', s.id)"
+                          @click.stop="$store.gym.openModal('editSession', session.id)"
                         >
                           <svg
                             style="width: 12px; height: 12px"
@@ -430,7 +525,7 @@
                             color: var(--danger);
                           "
                           title="Delete"
-                          @click.stop="$store.gym.openModal('deleteSession', s.id)"
+                          @click.stop="$store.gym.openModal('deleteSession', session.id)"
                         >
                           <svg
                             style="width: 12px; height: 12px"
@@ -455,9 +550,8 @@
                       color: var(--text3);
                       padding: 8px 12px;
                     "
-                  >
-                    No days yet. Add one!
-                  </div>
+                    x-text="$store.gym.t('no_days')"
+                  ></div>
                   <div
                     x-show="!$store.gym.selectedProgramId"
                     style="
@@ -465,12 +559,74 @@
                       color: var(--text3);
                       padding: 8px 12px;
                     "
-                  >
-                    Select a program first.
-                  </div>
+                    x-text="$store.gym.t('select_program_first')"
+                  ></div>
                 </div>
               </div>
+
+              <!-- Mobile-only user footer (pinned to bottom of drawer) -->
+              <div
+                class="sidebar-mobile-header"
+                style="
+                  display: none;
+                  flex-direction: column;
+                  flex-shrink: 0;
+                  border-top: 1px solid var(--border);
+                  padding: 12px 16px;
+                  gap: 8px;
+                "
+              >
+                <span
+                  style="font-size: 0.78rem; color: var(--text3)"
+                  x-text="$store.gym.user?.displayName || $store.gym.user?.email?.split('@')[0]"
+                ></span>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    @click="$store.gym.setLang($store.gym.lang === 'en' ? 'bg' : 'en')"
+                    :title="$store.gym.lang === 'en' ? 'Switch to Bulgarian' : 'Смени на английски'"
+                    style="
+                      font-size: 0.7rem;
+                      font-weight: 700;
+                      padding: 3px 8px;
+                      letter-spacing: 0.5px;
+                    "
+                    x-text="$store.gym.lang === 'en' ? 'EN' : 'BG'"
+                  ></button>
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    @click="$store.gym.logout()"
+                    :title="$store.gym.t('sign_out')"
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 5px;
+                      color: var(--text3);
+                    "
+                  >
+                    <svg
+                      style="width: 14px; height: 14px"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    <span x-text="$store.gym.t('sign_out')"></span>
+                  </button>
+                </div>
+              </div>
+              <!-- /mobile user footer -->
             </aside>
+
+            <!-- Mobile overlay — closes sidebar when tapped -->
+            <div
+              id="sidebar-overlay"
+              @click="$store.gym.sidebarOpen = false"
+            ></div>
 
             <!-- ════ MAIN CONTENT ══════════════════════════════════ -->
             <main
@@ -533,7 +689,7 @@
                           <rect x="16" y="7" width="3" height="10" rx="1" />
                           <line x1="8" y1="12" x2="16" y2="12" />
                         </svg>
-                        Workout
+                        <span x-text="$store.gym.t('mode_workout')"></span>
                       </button>
                       <button
                         @click="$store.gym.mode='config'"
@@ -561,7 +717,36 @@
                             d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
                           />
                         </svg>
-                        Configure
+                        <span x-text="$store.gym.t('mode_configure')"></span>
+                      </button>
+
+                      <!-- History button -->
+                      <button
+                        @click="$store.gym.mode='history'; $store.gym.loadHistory()"
+                        :style="$store.gym.mode==='history' ? 'color:var(--accent);background:var(--accent-bg);padding:8px 16px;border-radius:4px;display:flex;align-items:center;gap:6px;' : 'color:var(--text3);display:flex;align-items:center;gap:6px;'"
+                        style="
+                          display: flex;
+                          align-items: center;
+                          gap: 6px;
+                          padding: 8px 16px;
+                          border-radius: 4px;
+                          font-size: 0.8rem;
+                          font-weight: 500;
+                          transition: var(--trans);
+                        "
+                      >
+                        <svg
+                          style="width: 14px; height: 14px; flex-shrink: 0"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path d="M3 3v5h5" />
+                          <path d="M3.05 13A9 9 0 106 5.3L3 8" />
+                          <path d="M12 7v5l4 2" />
+                        </svg>
+                        <span x-text="$store.gym.t('history')"></span>
                       </button>
                     </div>
 
@@ -577,7 +762,7 @@
                     >
                       <input
                         type="text"
-                        placeholder="Add exercise…"
+                        :placeholder="$store.gym.t('add_exercise_placeholder')"
                         :value="$store.gym.searchQuery"
                         @input="$store.gym.onSearch($event.target.value)"
                         @focus="$store.gym.searchOpen=true"
@@ -614,7 +799,7 @@
                             <path d="M12 5v14M5 12h14" />
                           </svg>
                           <span
-                            x-text="$store.gym.searchQuery ? `Add new: &quot;${$store.gym.searchQuery}&quot;` : 'Add new exercise…'"
+                            x-text="$store.gym.searchQuery ? $store.gym.t('add_new_named', $store.gym.searchQuery) : $store.gym.t('add_new_exercise')"
                           ></span>
                         </div>
                       </div>
@@ -666,7 +851,7 @@
                             <circle cx="12" cy="12" r="6" />
                             <circle cx="12" cy="12" r="2" />
                           </svg>
-                          Weight Goals
+                          <span x-text="$store.gym.t('weight_goals')"></span>
                         </button>
                         <button
                           class="btn btn-primary btn-sm"
@@ -681,7 +866,7 @@
                           >
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
-                          Finish Workout
+                          <span x-text="$store.gym.t('finish_workout')"></span>
                         </button>
                       </div>
                     </template>
@@ -702,7 +887,7 @@
                         :class="$store.gym.saveStatus === 'saving' ? 'dot-saving' : 'dot-saved'"
                       ></div>
                       <span
-                        x-text="$store.gym.saveStatus === 'saving' ? 'Saving…' : 'Saved'"
+                        x-text="$store.gym.saveStatus === 'saving' ? $store.gym.t('saving') : $store.gym.t('saved')"
                       ></span>
                     </div>
                   </div>
@@ -730,13 +915,12 @@
                             color: var(--text2);
                             margin-bottom: 6px;
                           "
-                        >
-                          Select a workout day
-                        </h3>
-                        <p style="font-size: 0.85rem; max-width: 300px">
-                          Pick a program and a day from the sidebar to get
-                          started.
-                        </p>
+                          x-text="$store.gym.t('select_workout_day')"
+                        ></h3>
+                        <p
+                          style="font-size: 0.85rem; max-width: 300px"
+                          x-text="$store.gym.t('select_workout_day_desc')"
+                        ></p>
                       </div>
                     </template>
 
@@ -764,12 +948,12 @@
                               color: var(--text2);
                               margin-bottom: 6px;
                             "
-                          >
-                            No exercises yet
-                          </h3>
-                          <p style="font-size: 0.85rem">
-                            Use the search box above to add exercises.
-                          </p>
+                            x-text="$store.gym.t('no_exercises_yet')"
+                          ></h3>
+                          <p
+                            style="font-size: 0.85rem"
+                            x-text="$store.gym.t('no_exercises_yet_desc')"
+                          ></p>
                         </div>
                         <!-- Exercise list with drag-and-drop -->
                         <div id="config-list">
@@ -805,8 +989,8 @@
                                         color: var(--accent);
                                         font-weight: 700;
                                       "
-                                      >⚡ Superset</span
-                                    >
+                                      x-text="'⚡ ' + $store.gym.t('superset')"
+                                    ></span>
                                     <button
                                       class="btn btn-ghost btn-sm"
                                       @click="$store.gym.unmergeSuperset(item.supersetGroup)"
@@ -823,7 +1007,9 @@
                                         <path d="M8 21l-3-3 3-3" />
                                         <path d="M5 18h14" />
                                       </svg>
-                                      Unmerge
+                                      <span
+                                        x-text="$store.gym.t('unmerge')"
+                                      ></span>
                                     </button>
                                   </div>
                                   <template
@@ -934,35 +1120,39 @@
                                               <thead>
                                                 <tr>
                                                   <th style="width: 40px">#</th>
-                                                  <th>Reps</th>
-                                                  <th>Rest (mm:ss)</th>
+                                                  <th
+                                                    x-text="$store.gym.t('reps')"
+                                                  ></th>
+                                                  <th
+                                                    x-text="$store.gym.t('rest_mmss')"
+                                                  ></th>
                                                   <th style="width: 32px"></th>
                                                 </tr>
                                               </thead>
                                               <tbody>
                                                 <template
-                                                  x-for="(s, si) in ex.sets"
-                                                  :key="s.key"
+                                                  x-for="(currentSet, setIndex) in ex.sets"
+                                                  :key="currentSet.key"
                                                 >
                                                   <tr>
                                                     <td
                                                       class="set-num"
-                                                      x-text="si+1"
+                                                      x-text="setIndex+1"
                                                     ></td>
                                                     <td>
                                                       <input
                                                         type="number"
                                                         min="1"
                                                         max="100"
-                                                        :value="s.reps"
-                                                        @change="$store.gym.updateSetField(ex.id, si, 'reps', $event.target.value)"
+                                                        :value="currentSet.reps"
+                                                        @change="$store.gym.updateSetField(ex.id, setIndex, 'reps', $event.target.value)"
                                                       />
                                                     </td>
                                                     <td>
                                                       <input
                                                         type="text"
-                                                        :value="s.rest"
-                                                        @change="$store.gym.updateSetField(ex.id, si, 'rest', $event.target.value)"
+                                                        :value="currentSet.rest"
+                                                        @change="$store.gym.updateSetField(ex.id, setIndex, 'rest', $event.target.value)"
                                                         placeholder="02:00"
                                                       />
                                                     </td>
@@ -974,7 +1164,7 @@
                                                           height: 26px;
                                                         "
                                                         :disabled="ex.sets.length<=1"
-                                                        @click="$store.gym.removeSet(ex.id, si)"
+                                                        @click="$store.gym.removeSet(ex.id, setIndex)"
                                                       >
                                                         <svg
                                                           style="
@@ -1020,7 +1210,9 @@
                                                 >
                                                   <path d="M12 5v14M5 12h14" />
                                                 </svg>
-                                                Add Set
+                                                <span
+                                                  x-text="$store.gym.t('add_set')"
+                                                ></span>
                                               </button>
                                             </div>
                                             <!-- Markers -->
@@ -1041,16 +1233,17 @@
                                                   padding: 5px 28px 5px 8px;
                                                 "
                                               >
-                                                <option value="">
-                                                  Periodization
-                                                </option>
+                                                <option
+                                                  value=""
+                                                  x-text="$store.gym.t('periodization')"
+                                                ></option>
                                                 <template
-                                                  x-for="v in $store.gym.PERIODIZATIONS"
-                                                  :key="v"
+                                                  x-for="periodValue in $store.gym.PERIODIZATIONS"
+                                                  :key="periodValue"
                                                   ><option
-                                                    :value="v"
-                                                    x-text="v"
-                                                    :selected="$store.gym.getMarkerValue(ex.id,'Periodization')===v"
+                                                    :value="periodValue"
+                                                    x-text="periodValue"
+                                                    :selected="$store.gym.getMarkerValue(ex.id,'Periodization')===periodValue"
                                                   ></option
                                                 ></template>
                                               </select>
@@ -1063,14 +1256,17 @@
                                                   padding: 5px 28px 5px 8px;
                                                 "
                                               >
-                                                <option value="">IV %</option>
+                                                <option
+                                                  value=""
+                                                  x-text="$store.gym.t('intensity_volume')"
+                                                ></option>
                                                 <template
-                                                  x-for="v in $store.gym.IV_VALUES"
-                                                  :key="v"
+                                                  x-for="ivValue in $store.gym.IV_VALUES"
+                                                  :key="ivValue"
                                                   ><option
-                                                    :value="v"
-                                                    x-text="v+'%'"
-                                                    :selected="$store.gym.getMarkerValue(ex.id,'Intensity Volume')===v"
+                                                    :value="ivValue"
+                                                    x-text="ivValue+'%'"
+                                                    :selected="$store.gym.getMarkerValue(ex.id,'Intensity Volume')===ivValue"
                                                   ></option
                                                 ></template>
                                               </select>
@@ -1083,16 +1279,17 @@
                                                   padding: 5px 28px 5px 8px;
                                                 "
                                               >
-                                                <option value="">
-                                                  Load Inc.
-                                                </option>
+                                                <option
+                                                  value=""
+                                                  x-text="$store.gym.t('load_increment')"
+                                                ></option>
                                                 <template
-                                                  x-for="v in $store.gym.LI_VALUES"
-                                                  :key="v"
+                                                  x-for="liValue in $store.gym.LI_VALUES"
+                                                  :key="liValue"
                                                   ><option
-                                                    :value="v"
-                                                    x-text="v+' kg'"
-                                                    :selected="$store.gym.getMarkerValue(ex.id,'LI')===v"
+                                                    :value="liValue"
+                                                    x-text="liValue+' kg'"
+                                                    :selected="$store.gym.getMarkerValue(ex.id,'LI')===liValue"
                                                   ></option
                                                 ></template>
                                               </select>
@@ -1215,35 +1412,39 @@
                                       <thead>
                                         <tr>
                                           <th style="width: 40px">#</th>
-                                          <th>Reps</th>
-                                          <th>Rest (mm:ss)</th>
+                                          <th
+                                            x-text="$store.gym.t('reps')"
+                                          ></th>
+                                          <th
+                                            x-text="$store.gym.t('rest_mmss')"
+                                          ></th>
                                           <th style="width: 32px"></th>
                                         </tr>
                                       </thead>
                                       <tbody>
                                         <template
-                                          x-for="(s, si) in item.sets"
-                                          :key="s.key"
+                                          x-for="(currentSet, setIndex) in item.sets"
+                                          :key="currentSet.key"
                                         >
                                           <tr>
                                             <td
                                               class="set-num"
-                                              x-text="si+1"
+                                              x-text="setIndex+1"
                                             ></td>
                                             <td>
                                               <input
                                                 type="number"
                                                 min="1"
                                                 max="100"
-                                                :value="s.reps"
-                                                @change="$store.gym.updateSetField(item.id, si, 'reps', $event.target.value)"
+                                                :value="currentSet.reps"
+                                                @change="$store.gym.updateSetField(item.id, setIndex, 'reps', $event.target.value)"
                                               />
                                             </td>
                                             <td>
                                               <input
                                                 type="text"
-                                                :value="s.rest"
-                                                @change="$store.gym.updateSetField(item.id, si, 'rest', $event.target.value)"
+                                                :value="currentSet.rest"
+                                                @change="$store.gym.updateSetField(item.id, setIndex, 'rest', $event.target.value)"
                                                 placeholder="02:00"
                                               />
                                             </td>
@@ -1255,7 +1456,7 @@
                                                   height: 26px;
                                                 "
                                                 :disabled="item.sets.length<=1"
-                                                @click="$store.gym.removeSet(item.id, si)"
+                                                @click="$store.gym.removeSet(item.id, setIndex)"
                                               >
                                                 <svg
                                                   style="
@@ -1298,7 +1499,9 @@
                                         >
                                           <path d="M12 5v14M5 12h14" />
                                         </svg>
-                                        Add Set
+                                        <span
+                                          x-text="$store.gym.t('add_set')"
+                                        ></span>
                                       </button>
                                     </div>
                                     <div
@@ -1318,14 +1521,17 @@
                                           padding: 5px 28px 5px 8px;
                                         "
                                       >
-                                        <option value="">Periodization</option>
+                                        <option
+                                          value=""
+                                          x-text="$store.gym.t('periodization')"
+                                        ></option>
                                         <template
-                                          x-for="v in $store.gym.PERIODIZATIONS"
-                                          :key="v"
+                                          x-for="periodValue in $store.gym.PERIODIZATIONS"
+                                          :key="periodValue"
                                           ><option
-                                            :value="v"
-                                            x-text="v"
-                                            :selected="$store.gym.getMarkerValue(item.id,'Periodization')===v"
+                                            :value="periodValue"
+                                            x-text="periodValue"
+                                            :selected="$store.gym.getMarkerValue(item.id,'Periodization')===periodValue"
                                           ></option
                                         ></template>
                                       </select>
@@ -1338,14 +1544,17 @@
                                           padding: 5px 28px 5px 8px;
                                         "
                                       >
-                                        <option value="">IV %</option>
+                                        <option
+                                          value=""
+                                          x-text="$store.gym.t('intensity_volume')"
+                                        ></option>
                                         <template
-                                          x-for="v in $store.gym.IV_VALUES"
-                                          :key="v"
+                                          x-for="ivValue in $store.gym.IV_VALUES"
+                                          :key="ivValue"
                                           ><option
-                                            :value="v"
-                                            x-text="v+'%'"
-                                            :selected="$store.gym.getMarkerValue(item.id,'Intensity Volume')===v"
+                                            :value="ivValue"
+                                            x-text="ivValue+'%'"
+                                            :selected="$store.gym.getMarkerValue(item.id,'Intensity Volume')===ivValue"
                                           ></option
                                         ></template>
                                       </select>
@@ -1358,14 +1567,17 @@
                                           padding: 5px 28px 5px 8px;
                                         "
                                       >
-                                        <option value="">Load Inc.</option>
+                                        <option
+                                          value=""
+                                          x-text="$store.gym.t('load_increment')"
+                                        ></option>
                                         <template
-                                          x-for="v in $store.gym.LI_VALUES"
-                                          :key="v"
+                                          x-for="liValue in $store.gym.LI_VALUES"
+                                          :key="liValue"
                                           ><option
-                                            :value="v"
-                                            x-text="v+' kg'"
-                                            :selected="$store.gym.getMarkerValue(item.id,'LI')===v"
+                                            :value="liValue"
+                                            x-text="liValue+' kg'"
+                                            :selected="$store.gym.getMarkerValue(item.id,'LI')===liValue"
                                           ></option
                                         ></template>
                                       </select>
@@ -1407,13 +1619,12 @@
                               color: var(--text2);
                               margin-bottom: 6px;
                             "
-                          >
-                            No exercises
-                          </h3>
-                          <p style="font-size: 0.85rem">
-                            Switch to <strong>Configure</strong> to add
-                            exercises to this day.
-                          </p>
+                            x-text="$store.gym.t('no_exercises')"
+                          ></h3>
+                          <p
+                            style="font-size: 0.85rem"
+                            x-text="$store.gym.t('no_exercises_desc')"
+                          ></p>
                         </div>
 
                         <template
@@ -1451,9 +1662,8 @@
                                         font-size: 0.95rem;
                                         color: var(--accent);
                                       "
-                                    >
-                                      Superset
-                                    </div>
+                                      x-text="$store.gym.t('superset')"
+                                    ></div>
                                     <div
                                       style="
                                         font-size: 0.75rem;
@@ -1464,7 +1674,7 @@
                                     ></div>
                                   </div>
                                   <svg
-                    :style="'width:18px;height:18px;transition:transform .2s;flex-shrink:0;' + ($store.gym.expandedId==='ss-'+item.supersetGroup ? 'transform:rotate(180deg)' : '')"
+                                    :style="'width:18px;height:18px;transition:transform .2s;flex-shrink:0;' + ($store.gym.expandedId==='ss-'+item.supersetGroup ? 'transform:rotate(180deg)' : '')"
                                     viewBox="0 0 24 24"
                                     fill="none"
                                     stroke="currentColor"
@@ -1494,8 +1704,8 @@
                                     </template>
                                   </div>
                                   <template
-                                    x-for="(s, si) in activeEx.sets"
-                                    :key="s.key"
+                                    x-for="(currentSet, setIndex) in activeEx.sets"
+                                    :key="currentSet.key"
                                   >
                                     <div class="workout-set-row">
                                       <div
@@ -1504,7 +1714,7 @@
                                           color: var(--accent);
                                           font-size: 0.85rem;
                                         "
-                                        x-text="'S'+(si+1)"
+                                        x-text="$store.gym.t('set_abbr')+(setIndex+1)"
                                       ></div>
                                       <div
                                         class="target-reps"
@@ -1513,63 +1723,69 @@
                                           color: var(--text2);
                                           text-align: center;
                                         "
-                                        x-text="s.reps+'r'"
+                                        x-text="currentSet.reps+$store.gym.t('reps_abbr')"
                                       ></div>
                                       <div class="wi-group">
-                                        <label>Weight</label>
+                                        <label
+                                          x-text="$store.gym.t('weight_goals')"
+                                        ></label>
                                         <input
                                           type="number"
                                           step="0.25"
                                           placeholder="kg"
-                                          :value="$store.gym.getDraftSet(activeEx.id, s.key).weight ?? ''"
-                                          @input="$store.gym.updateWeight(activeEx.id, s.key, $event.target.value)"
+                                          :value="$store.gym.getDraftSet(activeEx.id, currentSet.key).weight ?? ''"
+                                          @input="$store.gym.updateWeight(activeEx.id, currentSet.key, $event.target.value)"
                                         />
                                       </div>
                                       <div class="wi-group">
-                                        <label>Reps</label>
+                                        <label
+                                          x-text="$store.gym.t('reps')"
+                                        ></label>
                                         <input
                                           type="number"
                                           min="0"
                                           max="999"
                                           placeholder=""
-                                          :value="$store.gym.getDraftSet(activeEx.id, s.key).reps ?? ''"
-                                          @input="$store.gym.updateReps(activeEx.id, s.key, $event.target.value)"
+                                          :value="$store.gym.getDraftSet(activeEx.id, currentSet.key).reps ?? ''"
+                                          @input="$store.gym.updateReps(activeEx.id, currentSet.key, $event.target.value)"
                                         />
                                       </div>
                                       <div class="set-history">
                                         <template
-                                          x-for="h in $store.gym.getSetHistory(activeEx.id, s.key).slice(-3)"
-                                          :key="h.date+h.logId"
+                                          x-for="histEntry in $store.gym.getSetHistory(activeEx.id, currentSet.key).slice(-3)"
+                                          :key="histEntry.date+histEntry.logId"
                                         >
                                           <div class="h-row">
                                             <span
                                               class="h-val"
-                                              x-text="(h.weight??0)+'kg×'+(h.reps??0)+'r'"
+                                              x-text="(histEntry.weight??0)+'kg×'+(histEntry.reps??0)+$store.gym.t('reps_abbr')"
                                             ></span>
-                                            <span x-text="h.date"></span>
+                                            <span
+                                              x-text="histEntry.date"
+                                            ></span>
                                           </div>
                                         </template>
                                         <span
-                                          x-show="!$store.gym.getSetHistory(activeEx.id, s.key).length"
+                                          x-show="!$store.gym.getSetHistory(activeEx.id, currentSet.key).length"
                                           style="font-size: 0.7rem"
-                                          >No history</span
-                                        >
+                                          x-text="$store.gym.t('no_history')"
+                                        ></span>
                                       </div>
                                       <template
-                                        x-if="$store.gym.restToSeconds(s.rest) > 0"
+                                        x-if="$store.gym.restToSeconds(currentSet.rest) > 0"
                                       >
                                         <button
                                           class="timer-btn"
-                                          :class="{ running: !!$store.gym.timerDisplay(activeEx.id+'-'+si) }"
-                                          @click="$store.gym.startTimer(activeEx.id+'-'+si, $store.gym.restToSeconds(s.rest))"
-                                          :title="'Rest '+s.rest"
+                                          :class="{ running: !!$store.gym.timerDisplay(activeEx.id+'-'+setIndex) }"
+                                          @click="$store.gym.startTimer(activeEx.id+'-'+setIndex, $store.gym.restToSeconds(currentSet.rest))"
+                                          :title="'Rest '+currentSet.rest"
                                         >
                                           <span
-                                            x-show="$store.gym.timerDisplay(activeEx.id+'-'+si)"
-                                            x-text="$store.gym.timerDisplay(activeEx.id+'-'+si)"
+                                            x-show="$store.gym.timerDisplay(activeEx.id+'-'+setIndex)"
+                                            x-text="$store.gym.timerDisplay(activeEx.id+'-'+setIndex)"
                                           ></span>
                                           <svg
-                                            x-show="!$store.gym.timerDisplay(activeEx.id+'-'+si)"
+                                            x-show="!$store.gym.timerDisplay(activeEx.id+'-'+setIndex)"
                                             style="width: 16px; height: 16px"
                                             viewBox="0 0 24 24"
                                             fill="none"
@@ -1622,15 +1838,22 @@
                                       "
                                     >
                                       <span
-                                        x-text="item.sets.length + ' sets'"
+                                        x-text="$store.gym.t('sets_count', item.sets.length)"
+                                        style="
+                                          text-align: center;
+                                          font-size: 0.75rem;
+                                          display: flex;
+                                          justify-content: center;
+                                          align-items: center;
+                                        "
                                       ></span>
                                       <template
-                                        x-for="mg in (Array.isArray(item.muscleGroups)?item.muscleGroups:(item.muscleGroups||'').split(','))"
-                                        :key="mg"
+                                        x-for="muscleGroup in (Array.isArray(item.muscleGroups)?item.muscleGroups:(item.muscleGroups||'').split(','))"
+                                        :key="muscleGroup"
                                       >
                                         <span
                                           class="badge"
-                                          x-text="mg.trim()"
+                                          x-text="muscleGroup.trim()"
                                           style="font-size: 0.65rem"
                                         ></span>
                                       </template>
@@ -1664,8 +1887,8 @@
                                   "
                                 >
                                   <template
-                                    x-for="(s, si) in item.sets"
-                                    :key="s.key"
+                                    x-for="(currentSet, setIndex) in item.sets"
+                                    :key="currentSet.key"
                                   >
                                     <div class="workout-set-row">
                                       <div
@@ -1674,7 +1897,7 @@
                                           color: var(--accent);
                                           font-size: 0.85rem;
                                         "
-                                        x-text="'S'+(si+1)"
+                                        x-text="$store.gym.t('set_abbr')+(setIndex+1)"
                                       ></div>
                                       <div
                                         class="target-reps"
@@ -1683,63 +1906,69 @@
                                           color: var(--text2);
                                           text-align: center;
                                         "
-                                        x-text="s.reps+'r'"
+                                        x-text="currentSet.reps+$store.gym.t('reps_abbr')"
                                       ></div>
                                       <div class="wi-group">
-                                        <label>Weight</label>
+                                        <label
+                                          x-text="$store.gym.t('weight_goals')"
+                                        ></label>
                                         <input
                                           type="number"
                                           step="0.25"
                                           placeholder="kg"
-                                          :value="$store.gym.getDraftSet(item.id, s.key).weight ?? ''"
-                                          @input="$store.gym.updateWeight(item.id, s.key, $event.target.value)"
+                                          :value="$store.gym.getDraftSet(item.id, currentSet.key).weight ?? ''"
+                                          @input="$store.gym.updateWeight(item.id, currentSet.key, $event.target.value)"
                                         />
                                       </div>
                                       <div class="wi-group">
-                                        <label>Reps</label>
+                                        <label
+                                          x-text="$store.gym.t('reps')"
+                                        ></label>
                                         <input
                                           type="number"
                                           min="0"
                                           max="999"
                                           placeholder=""
-                                          :value="$store.gym.getDraftSet(item.id, s.key).reps ?? ''"
-                                          @input="$store.gym.updateReps(item.id, s.key, $event.target.value)"
+                                          :value="$store.gym.getDraftSet(item.id, currentSet.key).reps ?? ''"
+                                          @input="$store.gym.updateReps(item.id, currentSet.key, $event.target.value)"
                                         />
                                       </div>
                                       <div class="set-history">
                                         <template
-                                          x-for="h in $store.gym.getSetHistory(item.id, s.key).slice(-3)"
-                                          :key="h.date+h.logId"
+                                          x-for="histEntry in $store.gym.getSetHistory(item.id, currentSet.key).slice(-3)"
+                                          :key="histEntry.date+histEntry.logId"
                                         >
                                           <div class="h-row">
                                             <span
                                               class="h-val"
-                                              x-text="(h.weight??0)+'kg×'+(h.reps??0)+'r'"
+                                              x-text="(histEntry.weight??0)+'kg×'+(histEntry.reps??0)+$store.gym.t('reps_abbr')"
                                             ></span>
-                                            <span x-text="h.date"></span>
+                                            <span
+                                              x-text="histEntry.date"
+                                            ></span>
                                           </div>
                                         </template>
                                         <span
-                                          x-show="!$store.gym.getSetHistory(item.id, s.key).length"
+                                          x-show="!$store.gym.getSetHistory(item.id, currentSet.key).length"
                                           style="font-size: 0.7rem"
-                                          >No history</span
-                                        >
+                                          x-text="$store.gym.t('no_history')"
+                                        ></span>
                                       </div>
                                       <template
-                                        x-if="$store.gym.restToSeconds(s.rest) > 0"
+                                        x-if="$store.gym.restToSeconds(currentSet.rest) > 0"
                                       >
                                         <button
                                           class="timer-btn"
-                                          :class="{ running: !!$store.gym.timerDisplay(item.id+'-'+si) }"
-                                          @click="$store.gym.startTimer(item.id+'-'+si, $store.gym.restToSeconds(s.rest))"
-                                          :title="'Rest '+s.rest"
+                                          :class="{ running: !!$store.gym.timerDisplay(item.id+'-'+setIndex) }"
+                                          @click="$store.gym.startTimer(item.id+'-'+setIndex, $store.gym.restToSeconds(currentSet.rest))"
+                                          :title="'Rest '+currentSet.rest"
                                         >
                                           <span
-                                            x-show="$store.gym.timerDisplay(item.id+'-'+si)"
-                                            x-text="$store.gym.timerDisplay(item.id+'-'+si)"
+                                            x-show="$store.gym.timerDisplay(item.id+'-'+setIndex)"
+                                            x-text="$store.gym.timerDisplay(item.id+'-'+setIndex)"
                                           ></span>
                                           <svg
-                                            x-show="!$store.gym.timerDisplay(item.id+'-'+si)"
+                                            x-show="!$store.gym.timerDisplay(item.id+'-'+setIndex)"
                                             style="width: 16px; height: 16px"
                                             viewBox="0 0 24 24"
                                             fill="none"
@@ -1762,164 +1991,75 @@
                         </template>
                       </div>
                     </template>
+                    <!-- ════ HISTORY MODE ══════════════════════ -->
+                    <template
+                      x-if="$store.gym.selectedSessionId && $store.gym.mode === 'history'"
+                    >
+                      <div>
+                        <div
+                          x-show="!$store.gym.sessionLogs().length"
+                          class="empty-state"
+                          style="padding-top: 40px"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 3v5h5" />
+                            <path d="M3.05 13A9 9 0 106 5.3L3 8" />
+                            <path d="M12 7v5l4 2" />
+                          </svg>
+                          <h3
+                            style="font-size: 1rem; color: var(--text2); margin-bottom: 6px"
+                            x-text="$store.gym.t('no_history_yet')"
+                          ></h3>
+                          <p
+                            style="font-size: 0.85rem"
+                            x-text="$store.gym.t('no_history_yet_desc')"
+                          ></p>
+                        </div>
+                        <template x-for="log in $store.gym.sessionLogs()" :key="log.id">
+                          <div x-data="{ open: false }" class="log-card">
+                            <div class="log-header" @click="open=!open">
+                              <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+                                <div style="font-size:0.75rem;color:var(--text3);display:flex;gap:12px">
+                                  <span x-text="$store.gym.formatDate(log.date)"></span>
+                                  <span x-text="$store.gym.relativeDate(log.date)"></span>
+                                  <span x-text="$store.gym.t('exercises_count', log.exercises.length)"></span>
+                                </div>
+                              </div>
+                              <svg
+                                :style="'width:16px;height:16px;transition:transform .2s;color:var(--text3);flex-shrink:0;' + (open ? 'transform:rotate(180deg)' : '')"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                              >
+                                <path d="M6 9l6 6 6-6" />
+                              </svg>
+                            </div>
+                            <div x-show="open" style="padding:0 16px 16px;border-top:1px solid var(--border)">
+                              <template x-for="logExercise in log.exercises" :key="logExercise.name">
+                                <div style="margin-top:12px">
+                                  <div
+                                    style="font-weight:600;font-size:0.85rem;margin-bottom:6px;color:var(--text)"
+                                    x-text="logExercise.name"
+                                  ></div>
+                                  <div style="display:flex;flex-wrap:wrap;gap:6px">
+                                    <template x-for="(logSet, logSetIndex) in logExercise.sets" :key="logSetIndex">
+                                      <span
+                                        class="badge"
+                                        x-text="(logSet.weight??0)+'kg × '+(logSet.reps??0)+$store.gym.t('reps_abbr')"
+                                      ></span>
+                                    </template>
+                                  </div>
+                                </div>
+                              </template>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+
                   </div>
                   <!-- /content body -->
                 </div>
               </template>
 
-              <!-- ──── HISTORY VIEW ─────────────────────────────── -->
-              <template x-if="$store.gym.view === 'history'">
-                <div style="flex: 1; overflow-y: auto; padding: 16px 20px">
-                  <div
-                    x-show="!$store.gym.workoutLogs.length"
-                    class="empty-state"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <path d="M3 3v5h5" />
-                      <path d="M3.05 13A9 9 0 106 5.3L3 8" />
-                      <path d="M12 7v5l4 2" />
-                    </svg>
-                    <h3
-                      style="
-                        font-size: 1rem;
-                        color: var(--text2);
-                        margin-bottom: 6px;
-                      "
-                    >
-                      No workout history yet
-                    </h3>
-                    <p style="font-size: 0.85rem">
-                      Complete a workout and click "Finish Workout" to log it
-                      here.
-                    </p>
-                  </div>
-
-                  <template
-                    x-for="group in $store.gym.groupedLogs()"
-                    :key="group.month"
-                  >
-                    <div style="margin-bottom: 24px">
-                      <div
-                        style="
-                          font-size: 0.75rem;
-                          text-transform: uppercase;
-                          letter-spacing: 1px;
-                          color: var(--text3);
-                          font-weight: 600;
-                          margin-bottom: 10px;
-                        "
-                        x-text="group.month"
-                      ></div>
-                      <template x-for="log in group.logs" :key="log.id">
-                        <div x-data="{ open: false }" class="log-card">
-                          <div class="log-header" @click="open=!open">
-                            <div
-                              style="
-                                display: flex;
-                                flex-direction: column;
-                                gap: 2px;
-                                flex: 1;
-                                min-width: 0;
-                              "
-                            >
-                              <div
-                                style="
-                                  display: flex;
-                                  align-items: center;
-                                  gap: 8px;
-                                "
-                              >
-                                <span
-                                  style="font-weight: 600; font-size: 0.95rem"
-                                  x-text="log.sessionName"
-                                ></span>
-                                <span
-                                  class="badge badge-accent"
-                                  x-text="log.programName"
-                                  style="font-size: 0.65rem"
-                                ></span>
-                              </div>
-                              <div
-                                style="
-                                  font-size: 0.75rem;
-                                  color: var(--text3);
-                                  display: flex;
-                                  gap: 12px;
-                                "
-                              >
-                                <span
-                                  x-text="$store.gym.formatDate(log.date)"
-                                ></span>
-                                <span
-                                  x-text="$store.gym.relativeDate(log.date)"
-                                ></span>
-                                <span
-                                  x-text="log.exercises.length + ' exercises'"
-                                ></span>
-                              </div>
-                            </div>
-                            <svg
-                              :style="'width:16px;height:16px;transition:transform .2s;color:var(--text3);flex-shrink:0;' + (open ? 'transform:rotate(180deg)' : '')"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            >
-                              <path d="M6 9l6 6 6-6" />
-                            </svg>
-                          </div>
-                          <div
-                            x-show="open"
-                            style="
-                              padding: 0 16px 16px;
-                              border-top: 1px solid var(--border);
-                            "
-                          >
-                            <template
-                              x-for="ex in log.exercises"
-                              :key="ex.name"
-                            >
-                              <div style="margin-top: 12px">
-                                <div
-                                  style="
-                                    font-weight: 600;
-                                    font-size: 0.85rem;
-                                    margin-bottom: 6px;
-                                    color: var(--text);
-                                  "
-                                  x-text="ex.name"
-                                ></div>
-                                <div
-                                  style="
-                                    display: flex;
-                                    flex-wrap: wrap;
-                                    gap: 6px;
-                                  "
-                                >
-                                  <template
-                                    x-for="(s, si) in ex.sets"
-                                    :key="si"
-                                  >
-                                    <span
-                                      class="badge"
-                                      x-text="(s.weight??0)+'kg × '+(s.reps??0)+'r'"
-                                    ></span>
-                                  </template>
-                                </div>
-                              </div>
-                            </template>
-                          </div>
-                        </div>
-                      </template>
-                    </div>
-                  </template>
-                </div>
-              </template>
             </main>
             <!-- /main content -->
           </div>
@@ -1949,9 +2089,8 @@
                     font-weight: 700;
                     margin-bottom: 16px;
                   "
-                >
-                  New Program
-                </h2>
+                  x-text="$store.gym.t('new_program_title')"
+                ></h2>
                 <div style="margin-bottom: 12px">
                   <label
                     style="
@@ -1961,14 +2100,14 @@
                       margin-bottom: 4px;
                       font-weight: 500;
                     "
-                    >Name</label
-                  >
+                    x-text="$store.gym.t('label_name')"
+                  ></label>
                   <input
                     x-model="$store.gym.modalForm.name"
                     @keyup.enter="$store.gym.addProgram()"
                     style="width: 100%"
                     autofocus
-                    placeholder="e.g. Push Pull Legs"
+                    :placeholder="$store.gym.t('placeholder_program_name')"
                   />
                 </div>
                 <div style="margin-bottom: 12px">
@@ -1980,13 +2119,13 @@
                       margin-bottom: 4px;
                       font-weight: 500;
                     "
-                    >Description</label
-                  >
+                    x-text="$store.gym.t('label_description')"
+                  ></label>
                   <textarea
                     x-model="$store.gym.modalForm.desc"
                     style="width: 100%"
                     rows="2"
-                    placeholder="Optional description"
+                    :placeholder="$store.gym.t('placeholder_description')"
                   ></textarea>
                 </div>
                 <div
@@ -2000,15 +2139,13 @@
                   <button
                     class="btn btn-secondary"
                     @click="$store.gym.closeModal()"
-                  >
-                    Cancel
-                  </button>
+                    x-text="$store.gym.t('btn_cancel')"
+                  ></button>
                   <button
                     class="btn btn-primary"
                     @click="$store.gym.addProgram()"
-                  >
-                    Create
-                  </button>
+                    x-text="$store.gym.t('btn_create')"
+                  ></button>
                 </div>
               </div>
 
@@ -2020,9 +2157,8 @@
                     font-weight: 700;
                     margin-bottom: 16px;
                   "
-                >
-                  Edit Program
-                </h2>
+                  x-text="$store.gym.t('edit_program_title')"
+                ></h2>
                 <div style="margin-bottom: 12px">
                   <label
                     style="
@@ -2032,8 +2168,8 @@
                       margin-bottom: 4px;
                       font-weight: 500;
                     "
-                    >Name</label
-                  >
+                    x-text="$store.gym.t('label_name')"
+                  ></label>
                   <input
                     x-model="$store.gym.modalForm.name"
                     style="width: 100%"
@@ -2048,8 +2184,8 @@
                       margin-bottom: 4px;
                       font-weight: 500;
                     "
-                    >Description</label
-                  >
+                    x-text="$store.gym.t('label_description')"
+                  ></label>
                   <textarea
                     x-model="$store.gym.modalForm.desc"
                     style="width: 100%"
@@ -2067,15 +2203,13 @@
                   <button
                     class="btn btn-secondary"
                     @click="$store.gym.closeModal()"
-                  >
-                    Cancel
-                  </button>
+                    x-text="$store.gym.t('btn_cancel')"
+                  ></button>
                   <button
                     class="btn btn-primary"
                     @click="$store.gym.editProgram()"
-                  >
-                    Save
-                  </button>
+                    x-text="$store.gym.t('btn_save')"
+                  ></button>
                 </div>
               </div>
 
@@ -2087,9 +2221,8 @@
                     font-weight: 700;
                     margin-bottom: 12px;
                   "
-                >
-                  Delete Program
-                </h2>
+                  x-text="$store.gym.t('delete_program_title')"
+                ></h2>
                 <p
                   style="
                     color: var(--text2);
@@ -2097,26 +2230,23 @@
                     font-size: 0.9rem;
                   "
                 >
-                  Delete
-                  <strong
-                    x-text="$store.gym.programs.find(p=>p.id===$store.gym.modal?.data)?.name"
+                  <span x-text="$store.gym.t('confirm_delete_prefix')"></span
+                  ><strong
+                    x-text="$store.gym.programs.find(program=>program.id===$store.gym.modal?.data)?.name"
                   ></strong
-                  >? This will also delete all workout days and exercises. This
-                  cannot be undone.
+                  ><span x-text="$store.gym.t('delete_program_suffix')"></span>
                 </p>
                 <div style="display: flex; justify-content: flex-end; gap: 8px">
                   <button
                     class="btn btn-secondary"
                     @click="$store.gym.closeModal()"
-                  >
-                    Cancel
-                  </button>
+                    x-text="$store.gym.t('btn_cancel')"
+                  ></button>
                   <button
                     class="btn btn-danger"
                     @click="$store.gym.deleteProgram()"
-                  >
-                    Delete
-                  </button>
+                    x-text="$store.gym.t('btn_delete')"
+                  ></button>
                 </div>
               </div>
 
@@ -2128,9 +2258,8 @@
                     font-weight: 700;
                     margin-bottom: 4px;
                   "
-                >
-                  New Workout Day
-                </h2>
+                  x-text="$store.gym.t('new_session_title')"
+                ></h2>
                 <p
                   style="
                     color: var(--text3);
@@ -2138,7 +2267,7 @@
                     margin-bottom: 16px;
                   "
                 >
-                  Adding to:
+                  <span x-text="$store.gym.t('adding_to')"></span>
                   <strong
                     style="color: var(--text2)"
                     x-text="$store.gym.selectedProgram?.name"
@@ -2153,14 +2282,14 @@
                       margin-bottom: 4px;
                       font-weight: 500;
                     "
-                    >Day Name</label
-                  >
+                    x-text="$store.gym.t('label_day_name')"
+                  ></label>
                   <input
                     x-model="$store.gym.modalForm.name"
                     @keyup.enter="$store.gym.addSession()"
                     style="width: 100%"
                     autofocus
-                    placeholder="e.g. Push Day, Monday…"
+                    :placeholder="$store.gym.t('placeholder_day_name')"
                   />
                 </div>
                 <div
@@ -2174,15 +2303,13 @@
                   <button
                     class="btn btn-secondary"
                     @click="$store.gym.closeModal()"
-                  >
-                    Cancel
-                  </button>
+                    x-text="$store.gym.t('btn_cancel')"
+                  ></button>
                   <button
                     class="btn btn-primary"
                     @click="$store.gym.addSession()"
-                  >
-                    Create
-                  </button>
+                    x-text="$store.gym.t('btn_create')"
+                  ></button>
                 </div>
               </div>
 
@@ -2194,9 +2321,8 @@
                     font-weight: 700;
                     margin-bottom: 16px;
                   "
-                >
-                  Edit Workout Day
-                </h2>
+                  x-text="$store.gym.t('edit_session_title')"
+                ></h2>
                 <div style="margin-bottom: 12px">
                   <label
                     style="
@@ -2206,8 +2332,8 @@
                       margin-bottom: 4px;
                       font-weight: 500;
                     "
-                    >Name</label
-                  >
+                    x-text="$store.gym.t('label_name')"
+                  ></label>
                   <input
                     x-model="$store.gym.modalForm.name"
                     style="width: 100%"
@@ -2224,15 +2350,13 @@
                   <button
                     class="btn btn-secondary"
                     @click="$store.gym.closeModal()"
-                  >
-                    Cancel
-                  </button>
+                    x-text="$store.gym.t('btn_cancel')"
+                  ></button>
                   <button
                     class="btn btn-primary"
                     @click="$store.gym.editSession()"
-                  >
-                    Save
-                  </button>
+                    x-text="$store.gym.t('btn_save')"
+                  ></button>
                 </div>
               </div>
 
@@ -2244,9 +2368,8 @@
                     font-weight: 700;
                     margin-bottom: 12px;
                   "
-                >
-                  Delete Workout Day
-                </h2>
+                  x-text="$store.gym.t('delete_session_title')"
+                ></h2>
                 <p
                   style="
                     color: var(--text2);
@@ -2254,25 +2377,23 @@
                     font-size: 0.9rem;
                   "
                 >
-                  Delete
-                  <strong
-                    x-text="$store.gym.sessions.find(s=>s.id===$store.gym.modal?.data)?.name"
+                  <span x-text="$store.gym.t('confirm_delete_prefix')"></span
+                  ><strong
+                    x-text="$store.gym.sessions.find(session=>session.id===$store.gym.modal?.data)?.name"
                   ></strong
-                  >? All exercises in this day will also be removed.
+                  ><span x-text="$store.gym.t('delete_session_suffix')"></span>
                 </p>
                 <div style="display: flex; justify-content: flex-end; gap: 8px">
                   <button
                     class="btn btn-secondary"
                     @click="$store.gym.closeModal()"
-                  >
-                    Cancel
-                  </button>
+                    x-text="$store.gym.t('btn_cancel')"
+                  ></button>
                   <button
                     class="btn btn-danger"
                     @click="$store.gym.deleteSession()"
-                  >
-                    Delete
-                  </button>
+                    x-text="$store.gym.t('btn_delete')"
+                  ></button>
                 </div>
               </div>
 
@@ -2284,9 +2405,8 @@
                     font-weight: 700;
                     margin-bottom: 16px;
                   "
-                >
-                  Add New Exercise
-                </h2>
+                  x-text="$store.gym.t('add_exercise_title')"
+                ></h2>
                 <div style="margin-bottom: 12px">
                   <label
                     style="
@@ -2296,13 +2416,13 @@
                       margin-bottom: 4px;
                       font-weight: 500;
                     "
-                    >Name</label
-                  >
+                    x-text="$store.gym.t('label_name')"
+                  ></label>
                   <input
                     x-model="$store.gym.modalForm.name"
                     style="width: 100%"
                     autofocus
-                    placeholder="Exercise name"
+                    :placeholder="$store.gym.t('placeholder_exercise_name')"
                   />
                 </div>
                 <div style="margin-bottom: 12px">
@@ -2314,12 +2434,12 @@
                       margin-bottom: 4px;
                       font-weight: 500;
                     "
-                    >YouTube / Video URL</label
-                  >
+                    x-text="$store.gym.t('label_video_url')"
+                  ></label>
                   <input
                     x-model="$store.gym.modalForm.videoLink"
                     style="width: 100%"
-                    placeholder="https://youtube.com/…"
+                    :placeholder="$store.gym.t('placeholder_video_url')"
                   />
                 </div>
                 <div style="margin-bottom: 12px">
@@ -2331,15 +2451,18 @@
                       margin-bottom: 6px;
                       font-weight: 500;
                     "
-                    >Muscle Groups</label
-                  >
+                    x-text="$store.gym.t('label_muscle_groups')"
+                  ></label>
                   <div style="display: flex; flex-wrap: wrap; gap: 6px">
-                    <template x-for="mg in $store.gym.MUSCLE_GROUPS" :key="mg">
+                    <template
+                      x-for="muscleGroup in $store.gym.MUSCLE_GROUPS"
+                      :key="muscleGroup"
+                    >
                       <span
                         class="chip"
-                        :class="{ active: $store.gym.modalChips.includes(mg) }"
-                        @click="$store.gym.toggleChip(mg)"
-                        x-text="mg"
+                        :class="{ active: $store.gym.modalChips.includes(muscleGroup) }"
+                        @click="$store.gym.toggleChip(muscleGroup)"
+                        x-text="muscleGroup"
                       ></span>
                     </template>
                   </div>
@@ -2355,15 +2478,13 @@
                   <button
                     class="btn btn-secondary"
                     @click="$store.gym.closeModal()"
-                  >
-                    Cancel
-                  </button>
+                    x-text="$store.gym.t('btn_cancel')"
+                  ></button>
                   <button
                     class="btn btn-primary"
                     @click="$store.gym.addCustomExercise()"
-                  >
-                    Add &amp; Insert
-                  </button>
+                    x-text="$store.gym.t('btn_add_insert')"
+                  ></button>
                 </div>
               </div>
 
@@ -2375,27 +2496,24 @@
                     font-weight: 700;
                     margin-bottom: 4px;
                   "
-                >
-                  Weight Goals
-                </h2>
+                  x-text="$store.gym.t('weight_goals_title')"
+                ></h2>
                 <p
                   style="
                     color: var(--text3);
                     font-size: 0.8rem;
                     margin-bottom: 16px;
                   "
-                >
-                  Based on last workout + Load Increment (LI)
-                </p>
+                  x-text="$store.gym.t('weight_goals_desc')"
+                ></p>
                 <div
                   x-show="!$store.gym.weightGoalRows().length"
                   style="color: var(--text3); text-align: center; padding: 20px"
-                >
-                  Work out at least once to generate goals.
-                </div>
+                  x-text="$store.gym.t('weight_goals_empty')"
+                ></div>
                 <template
-                  x-for="row in $store.gym.weightGoalRows()"
-                  :key="row.name"
+                  x-for="goalRow in $store.gym.weightGoalRows()"
+                  :key="goalRow.name"
                 >
                   <div style="margin-bottom: 14px">
                     <div
@@ -2408,14 +2526,17 @@
                         gap: 8px;
                       "
                     >
-                      <span x-text="row.name"></span>
+                      <span x-text="goalRow.name"></span>
                       <span
                         class="badge badge-warning"
-                        x-text="'LI '+row.li+'kg'"
+                        x-text="'LI '+goalRow.li+'kg'"
                         style="font-size: 0.65rem"
                       ></span>
                     </div>
-                    <template x-for="s in row.sets" :key="s.key">
+                    <template
+                      x-for="goalSet in goalRow.sets"
+                      :key="goalSet.key"
+                    >
                       <div
                         style="
                           display: flex;
@@ -2426,15 +2547,18 @@
                           font-size: 0.85rem;
                         "
                       >
-                        <span x-text="s.key" style="color: var(--text2)"></span>
+                        <span
+                          x-text="goalSet.key"
+                          style="color: var(--text2)"
+                        ></span>
                         <span
                           style="color: var(--text3)"
-                          x-text="s.lastW+'kg'"
+                          x-text="goalSet.lastW+'kg'"
                         ></span>
                         <span style="color: var(--text3)">→</span>
                         <span
                           style="color: var(--accent); font-weight: 600"
-                          x-text="s.goal+'kg'"
+                          x-text="goalSet.goal+'kg'"
                         ></span>
                       </div>
                     </template>
@@ -2451,16 +2575,14 @@
                   <button
                     class="btn btn-secondary"
                     @click="$store.gym.closeModal()"
-                  >
-                    Close
-                  </button>
+                    x-text="$store.gym.t('btn_close')"
+                  ></button>
                   <button
                     class="btn btn-primary"
                     x-show="$store.gym.weightGoalRows().length"
                     @click="$store.gym.applyWeightGoals()"
-                  >
-                    Apply Goals
-                  </button>
+                    x-text="$store.gym.t('btn_apply_goals')"
+                  ></button>
                 </div>
               </div>
 
@@ -2472,26 +2594,22 @@
                     font-weight: 700;
                     margin-bottom: 8px;
                   "
-                >
-                  Finish Workout
-                </h2>
+                  x-text="$store.gym.t('finish_workout_title')"
+                ></h2>
                 <p
                   style="
                     color: var(--text2);
                     font-size: 0.9rem;
                     margin-bottom: 16px;
                   "
-                >
-                  This will save today's workout log and update your set
-                  history.
-                </p>
+                  x-text="$store.gym.t('finish_workout_desc')"
+                ></p>
                 <div style="display: flex; justify-content: flex-end; gap: 8px">
                   <button
                     class="btn btn-secondary"
                     @click="$store.gym.closeModal()"
-                  >
-                    Cancel
-                  </button>
+                    x-text="$store.gym.t('btn_cancel')"
+                  ></button>
                   <button
                     class="btn btn-primary"
                     @click="$store.gym.finishWorkout()"
@@ -2505,7 +2623,7 @@
                     >
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
-                    Save Workout
+                    <span x-text="$store.gym.t('btn_save_workout')"></span>
                   </button>
                 </div>
               </div>
@@ -2526,13 +2644,13 @@
               gap: 8px;
             "
           >
-            <template x-for="t in $store.gym.toasts" :key="t.id">
+            <template x-for="toast in $store.gym.toasts" :key="toast.id">
               <div
                 class="toast"
-                :class="t.type==='error' ? 'toast-error' : 'toast-success'"
+                :class="toast.type==='error' ? 'toast-error' : 'toast-success'"
               >
                 <svg
-                  x-show="t.type!=='error'"
+                  x-show="toast.type!=='error'"
                   style="width: 14px; height: 14px; flex-shrink: 0"
                   viewBox="0 0 24 24"
                   fill="none"
@@ -2542,7 +2660,7 @@
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
                 <svg
-                  x-show="t.type==='error'"
+                  x-show="toast.type==='error'"
                   style="width: 14px; height: 14px; flex-shrink: 0"
                   viewBox="0 0 24 24"
                   fill="none"
@@ -2551,7 +2669,7 @@
                 >
                   <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
-                <span x-text="t.msg"></span>
+                <span x-text="toast.msg"></span>
               </div>
             </template>
           </div>
@@ -2563,7 +2681,7 @@
 
     <!-- Sidebar drawer -->
     <style>
-      /* Sidebar pushes content — stays in flex flow */
+      /* ── Wide screens: sidebar pushes content (stays in flex flow) ── */
       #sidebar {
         flex-shrink: 0;
         width: 0;
@@ -2572,6 +2690,52 @@
       }
       #sidebar.open {
         width: 280px;
+      }
+
+      /* ── Mobile topbar: hide everything except burger + logo ── */
+      @media (max-width: 600px) {
+        #topbar > *:nth-child(n + 3) {
+          display: none !important;
+        }
+      }
+
+      /* ── Narrow screens (≤600px): sidebar overlays full viewport ── */
+      @media (max-width: 600px) {
+        #sidebar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: 100vh;
+          width: 0;
+          z-index: 200;
+          box-shadow: none;
+          transition:
+            width 0.25s ease,
+            box-shadow 0.25s ease;
+        }
+        #sidebar.open {
+          width: min(300px, 85vw);
+          box-shadow: 4px 0 32px rgba(0, 0, 0, 0.6);
+        }
+        #sidebar-overlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 199;
+        }
+        #sidebar.open ~ #sidebar-overlay,
+        body:has(#sidebar.open) #sidebar-overlay {
+          display: block;
+        }
+        .sidebar-mobile-header {
+          display: flex !important;
+        }
+      }
+      @media (min-width: 601px) {
+        .sidebar-mobile-header {
+          display: none !important;
+        }
       }
     </style>
     <script type="module">

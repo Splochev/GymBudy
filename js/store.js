@@ -4,6 +4,7 @@
 
 import { auth, db } from "./firebase.js";
 import * as DB from "./db.js";
+import { translations } from "./i18n.js";
 import {
   onAuthStateChanged,
   signOut,
@@ -67,9 +68,12 @@ export function registerStore(Alpine) {
     user: null,
     loading: true,
 
+    // ── i18n ─────────────────────────────────────────────────
+    lang: localStorage.getItem("gymbudy-lang") || "en",
+
     // ── Navigation ───────────────────────────────────────────
     view: "workout", // 'workout' | 'history'
-    mode: "workout", // 'workout' | 'config'
+    mode: "workout", // 'workout' | 'config' | 'history'
     sidebarOpen: true,
 
     // ── Data ─────────────────────────────────────────────────
@@ -106,6 +110,19 @@ export function registerStore(Alpine) {
     PERIODIZATIONS,
     IV_VALUES,
     LI_VALUES,
+
+    // ─── i18n HELPERS ─────────────────────────────────────────
+    t(key, ...args) {
+      const tr = translations[this.lang] ?? translations.en;
+      const entry = tr[key] ?? translations.en[key];
+      if (typeof entry === "function") return entry(...args);
+      return entry ?? key;
+    },
+
+    setLang(langCode) {
+      this.lang = langCode;
+      localStorage.setItem("gymbudy-lang", langCode);
+    },
 
     // ─── COMPUTED ────────────────────────────────────────────
     get selectedProgram() {
@@ -190,6 +207,19 @@ export function registerStore(Alpine) {
       }
     },
 
+    async loadHistory() {
+      if (!this.historyLoaded) {
+        this.workoutLogs = await DB.getWorkoutLogs(this.user.uid);
+        this.historyLoaded = true;
+      }
+    },
+
+    sessionLogs() {
+      return this.workoutLogs.filter(
+        (log) => log.sessionId === this.selectedSessionId,
+      );
+    },
+
     // ─── PROGRAMS ────────────────────────────────────────────
     async selectProgram(pid) {
       this.selectedProgramId = pid;
@@ -209,7 +239,7 @@ export function registerStore(Alpine) {
       });
       this.programs.push(p);
       await this.selectProgram(p.id);
-      this.showToast("Program created");
+      this.showToast("toast_program_created");
       this.closeModal();
     },
 
@@ -226,7 +256,7 @@ export function registerStore(Alpine) {
         p.name = name.trim();
         p.description = description ?? "";
       }
-      this.showToast("Program updated");
+      this.showToast("toast_program_updated");
       this.closeModal();
     },
 
@@ -241,7 +271,7 @@ export function registerStore(Alpine) {
         this.exercises = [];
         if (this.programs.length) await this.selectProgram(this.programs[0].id);
       }
-      this.showToast("Program deleted");
+      this.showToast("toast_program_deleted");
       this.closeModal();
     },
 
@@ -269,7 +299,7 @@ export function registerStore(Alpine) {
       });
       this.sessions.push(s);
       await this.selectSession(s.id);
-      this.showToast("Workout day created");
+      this.showToast("toast_day_created");
       this.closeModal();
     },
 
@@ -282,7 +312,7 @@ export function registerStore(Alpine) {
       });
       const s = this.sessions.find((x) => x.id === sid);
       if (s) s.name = name.trim();
-      this.showToast("Day updated");
+      this.showToast("toast_day_updated");
       this.closeModal();
     },
 
@@ -295,7 +325,7 @@ export function registerStore(Alpine) {
         this.exercises = [];
         if (this.sessions.length) await this.selectSession(this.sessions[0].id);
       }
-      this.showToast("Day deleted");
+      this.showToast("toast_day_deleted");
       this.closeModal();
     },
 
@@ -307,7 +337,7 @@ export function registerStore(Alpine) {
         sid = this.selectedSessionId;
       // Prevent duplicates
       if (this.exercises.some((e) => e.globalId === globalEx.id)) {
-        this.showToast("Already in this session", "error");
+        this.showToast("toast_already_in_session", "error");
         return;
       }
       const order = this.exercises.length + 1;
@@ -343,7 +373,7 @@ export function registerStore(Alpine) {
       this.globalExercises.push(globalEx);
       // Add to session
       await this.addExerciseToSession(globalEx);
-      this.showToast("Exercise added");
+      this.showToast("toast_exercise_added");
       this.closeModal();
     },
 
@@ -425,7 +455,7 @@ export function registerStore(Alpine) {
       }
       this.mergeSet = [];
       await this._batchSaveOrder();
-      this.showToast("Superset created");
+      this.showToast("toast_superset_created");
     },
 
     async unmergeSuperset(groupId) {
@@ -438,7 +468,7 @@ export function registerStore(Alpine) {
         ex.order = order++;
       }
       await this._batchSaveOrder();
-      this.showToast("Superset removed");
+      this.showToast("toast_superset_removed");
     },
 
     // ─── DRAG AND DROP (config mode) ─────────────────────────
@@ -516,7 +546,7 @@ export function registerStore(Alpine) {
         }
       }
       this._persistDraft();
-      this.showToast("Goals applied!");
+      this.showToast("toast_goals_applied");
       this.closeModal();
     },
 
@@ -555,7 +585,7 @@ export function registerStore(Alpine) {
         .filter((e) => e.sets.length > 0);
 
       if (!logExercises.length) {
-        this.showToast("No data logged yet", "error");
+        this.showToast("toast_no_data", "error");
         return;
       }
 
@@ -605,7 +635,7 @@ export function registerStore(Alpine) {
       this.workoutDraft = {};
       this._clearDraft(this.selectedSessionId);
 
-      this.showToast("Workout saved!");
+      this.showToast("toast_workout_saved");
       this.closeModal();
     },
 
@@ -627,7 +657,7 @@ export function registerStore(Alpine) {
           delete t[key];
           this.activeTimers = t;
           beep();
-          this.showToast("Rest done — next set!");
+          this.showToast("toast_rest_done");
           return;
         }
         this.activeTimers = {
@@ -677,11 +707,12 @@ export function registerStore(Alpine) {
     },
 
     // ─── TOASTS ──────────────────────────────────────────────
-    showToast(msg, type = "success") {
+    showToast(msgOrKey, type = "success") {
       const id = generateId();
+      const msg = this.t(msgOrKey);
       this.toasts.push({ id, msg, type });
       setTimeout(() => {
-        this.toasts = this.toasts.filter((t) => t.id !== id);
+        this.toasts = this.toasts.filter((toast) => toast.id !== id);
       }, 2500);
     },
 
@@ -699,24 +730,37 @@ export function registerStore(Alpine) {
     groupedLogs() {
       const groups = new Map();
       for (const log of this.workoutLogs) {
-        const month = getMonthYear(log.date);
+        const date = new Date(log.date + "T12:00:00");
+        const tr = translations[this.lang] ?? translations.en;
+        const month = `${tr.months[date.getMonth()]} ${date.getFullYear()}`;
         if (!groups.has(month)) groups.set(month, []);
         groups.get(month).push(log);
       }
       return [...groups.entries()].map(([month, logs]) => ({ month, logs }));
     },
 
-    formatDate(d) {
-      return formatDate(d);
+    formatDate(dateStr) {
+      const date = new Date(dateStr + "T12:00:00");
+      const tr = translations[this.lang] ?? translations.en;
+      return `${tr.days_short[date.getDay()]}, ${tr.months_short[date.getMonth()]} ${date.getDate()}`;
     },
-    relativeDate(d) {
-      return relativeDate(d);
+    relativeDate(dateStr) {
+      const diff = Math.floor(
+        (new Date() - new Date(dateStr + "T12:00:00")) / 86400000,
+      );
+      const tr = translations[this.lang] ?? translations.en;
+      if (diff === 0) return tr.today;
+      if (diff === 1) return tr.yesterday;
+      if (diff < 7) return tr.days_ago(diff);
+      if (diff < 30) return tr.weeks_ago(diff);
+      if (diff < 365) return tr.months_ago(diff);
+      return tr.years_ago(diff);
     },
-    secondsToRest(s) {
-      return secondsToRest(s);
+    secondsToRest(seconds) {
+      return secondsToRest(seconds);
     },
-    restToSeconds(s) {
-      return restToSeconds(s);
+    restToSeconds(restStr) {
+      return restToSeconds(restStr);
     },
 
     // ─── INTERNAL SAVE HELPERS ───────────────────────────────
