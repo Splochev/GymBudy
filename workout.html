@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GymBud – Workout Manager</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="stylesheet" href="./css/app.css" />
   </head>
   <body>
@@ -131,7 +132,7 @@
             <div style="display: flex; gap: 16px; margin-left: 8px">
               <button
                 @click="$store.gym.switchView('workout')"
-                :style="$store.gym.view==='workout' ? 'color:var(--accent);background:var(--accent-bg);padding:8px 16px;border-radius:4px;' : 'color:var(--text3)'"
+                :style="$store.gym.view==='workout' ? 'color:var(--accent);background:var(--accent-bg);padding:8px 16px;border-radius:4px;display: flex;align-items: center;gap: 6px;' : 'color:var(--text3);display: flex;align-items: center;gap: 6px;'"
                 style="
                   display: flex;
                   align-items: center;
@@ -160,7 +161,7 @@
               </button>
               <button
                 @click="$store.gym.switchView('history')"
-                :style="$store.gym.view==='history' ? 'color:var(--accent);background:var(--accent-bg);padding:8px 16px;border-radius:4px;' : 'color:var(--text3)'"
+                :style="$store.gym.view==='history' ? 'color:var(--accent);background:var(--accent-bg);padding:8px 16px;border-radius:4px;display: flex;align-items: center;gap: 6px;' : 'color:var(--text3);display: flex;align-items: center;gap: 6px;'"
                 style="
                   display: flex;
                   align-items: center;
@@ -536,7 +537,7 @@
                     <div style="display: flex; gap: 16px; flex-shrink: 0">
                       <button
                         @click="$store.gym.mode='workout'"
-                        :style="$store.gym.mode==='workout' ? 'color:var(--accent);background:var(--accent-bg);padding:8px 16px;border-radius:4px;' : 'color:var(--text3)'"
+                        :style="$store.gym.mode==='workout' ? 'color:var(--accent);background:var(--accent-bg);padding:8px 16px;border-radius:4px;display: flex;align-items: center;gap: 6px;' : 'color:var(--text3);display: flex;align-items: center;gap: 6px;'"
                         style="
                           display: flex;
                           align-items: center;
@@ -565,7 +566,7 @@
                       </button>
                       <button
                         @click="$store.gym.mode='config'"
-                        :style="$store.gym.mode==='config' ? 'color:var(--accent);background:var(--accent-bg);padding:8px 16px;border-radius:4px;' : 'color:var(--text3)'"
+                        :style="$store.gym.mode==='config' ? 'color:var(--accent);background:var(--accent-bg);padding:8px 16px;border-radius:4px;display: flex;align-items: center;gap: 6px;' : 'color:var(--text3);display: flex;align-items: center;gap: 6px;'"
                         style="
                           display: flex;
                           align-items: center;

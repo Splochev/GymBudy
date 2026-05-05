@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GymBud – Sign In</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="stylesheet" href="./css/app.css" />
     <style>
       body {
@@ -11,14 +12,15 @@
         align-items: center;
         justify-content: center;
         min-height: 100vh;
+        padding: 24px;
       }
       .auth-card {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 36px;
+        padding: 48px 52px;
         width: 100%;
-        max-width: 520px;
+        max-width: 560px;
         box-shadow: var(--shadow);
         animation: fadeIn 0.3s;
       }
@@ -66,7 +68,7 @@
     </style>
   </head>
   <body>
-    <div x-data="authPage()">
+    <div x-data="authPage()" style="width:100%;max-width:560px">
       <div class="auth-card">
         <!-- Logo -->
         <div class="auth-logo">
