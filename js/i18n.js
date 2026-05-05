@@ -24,7 +24,7 @@ export const translations = {
     mode_workout: "Workout",
     mode_configure: "Configure",
     weight_goals: "Target",
-    finish_workout: "Finish Workout",
+    finish_workout: "Save Now",
     saving: "Saving…",
     saved: "Saved",
     add_exercise_placeholder: "Add exercise…",
@@ -60,7 +60,7 @@ export const translations = {
     // ── History view ──────────────────────────────────────────
     no_history_yet: "No workout history yet",
     no_history_yet_desc:
-      'Complete a workout and click "Finish Workout" to log it here.',
+      "Start logging sets in Workout mode. Entries are autosaved.",
     exercises_count: (n) => `${n} exercises`,
 
     // ── Modal titles ──────────────────────────────────────────
@@ -75,9 +75,9 @@ export const translations = {
     weight_goals_title: "Target",
     weight_goals_desc: "Based on last workout + Load Increment (LI)",
     weight_goals_empty: "Work out at least once to generate goals.",
-    finish_workout_title: "Finish Workout",
+    finish_workout_title: "Save Workout Now",
     finish_workout_desc:
-      "This will save today's workout log and update your set history.",
+      "Autosave is enabled. Use this to save immediately.",
 
     // ── Delete confirmations (split around <strong> name) ─────
     confirm_delete_prefix: "Delete ",
@@ -206,7 +206,7 @@ export const translations = {
     mode_workout: "Тренировка",
     mode_configure: "Настройки",
     weight_goals: "Цел",
-    finish_workout: "Приключи тренировка",
+    finish_workout: "Запази сега",
     saving: "Запазва...",
     saved: "Запазено",
     add_exercise_placeholder: "Добави упражнение…",
@@ -244,7 +244,7 @@ export const translations = {
     // ── History view ──────────────────────────────────────────
     no_history_yet: "Все още няма история на тренировките",
     no_history_yet_desc:
-      'Завършете тренировка и натиснете „Приключи тренировка", за да я запишете тук.',
+      "Започнете да въвеждате серии в режим Тренировка. Записът е автоматичен.",
     exercises_count: (n) => `${n} упражнения`,
 
     // ── Modal titles ──────────────────────────────────────────
@@ -260,9 +260,9 @@ export const translations = {
     weight_goals_desc:
       "Базирано на последна тренировка + Приращение на натоварването (ПН)",
     weight_goals_empty: "Тренирайте поне веднъж, за да генерирате цели.",
-    finish_workout_title: "Приключи тренировка",
+    finish_workout_title: "Запази тренировка сега",
     finish_workout_desc:
-      "Това ще запише дневника на тренировката и ще обнови историята ви.",
+      "Автоматичното запазване е включено. Използвайте това за незабавен запис.",
 
     // ── Delete confirmations ──────────────────────────────────
     confirm_delete_prefix: "Изтрий ",

@@ -215,9 +215,25 @@ export function registerStore(Alpine) {
     },
 
     sessionLogs() {
-      return this.workoutLogs.filter(
+      const logs = this.workoutLogs.filter(
         (log) => log.sessionId === this.selectedSessionId,
       );
+      const byDate = new Map();
+      const tsMs = (log) => {
+        const ts = log.updatedAt ?? log.loggedAt;
+        if (!ts) return 0;
+        if (typeof ts.toMillis === "function") return ts.toMillis();
+        if (typeof ts.seconds === "number") return ts.seconds * 1000;
+        const parsed = Date.parse(ts);
+        return Number.isFinite(parsed) ? parsed : 0;
+      };
+
+      for (const log of logs) {
+        const prev = byDate.get(log.date);
+        if (!prev || tsMs(log) > tsMs(prev)) byDate.set(log.date, log);
+      }
+
+      return [...byDate.values()].sort((a, b) => b.date.localeCompare(a.date));
     },
 
     // ─── PROGRAMS ────────────────────────────────────────────
@@ -511,14 +527,18 @@ export function registerStore(Alpine) {
       if (!this.workoutDraft[eid]) this.workoutDraft[eid] = {};
       if (!this.workoutDraft[eid][setKey]) this.workoutDraft[eid][setKey] = {};
       this.workoutDraft[eid][setKey].weight = value;
+      this.saveStatus = "saving";
       this._persistDraft();
+      this._autosaveWorkoutDebounced();
     },
 
     updateReps(eid, setKey, value) {
       if (!this.workoutDraft[eid]) this.workoutDraft[eid] = {};
       if (!this.workoutDraft[eid][setKey]) this.workoutDraft[eid][setKey] = {};
       this.workoutDraft[eid][setKey].reps = value;
+      this.saveStatus = "saving";
       this._persistDraft();
+      this._autosaveWorkoutDebounced();
     },
 
     getDraftSet(eid, setKey) {
@@ -612,9 +632,21 @@ export function registerStore(Alpine) {
       return rows;
     },
 
-    async finishWorkout() {
+    async persistWorkoutProgress(showToast = false) {
       if (!this.selectedSessionId) return;
       const today = todayStr();
+
+      const normalizeWeight = (value) => {
+        if (value === null || value === undefined || value === "") return null;
+        const n = Number.parseFloat(value);
+        return Number.isFinite(n) ? n : null;
+      };
+      const normalizeReps = (value) => {
+        if (value === null || value === undefined || value === "") return null;
+        const n = Number.parseInt(value, 10);
+        return Number.isFinite(n) ? n : null;
+      };
+
       const logExercises = this.exercises
         .map((ex) => ({
           id: ex.id,
@@ -622,20 +654,17 @@ export function registerStore(Alpine) {
           sets: (ex.sets || [])
             .map((s) => ({
               key: s.key,
-              weight: this.workoutDraft[ex.id]?.[s.key]?.weight ?? null,
-              reps: this.workoutDraft[ex.id]?.[s.key]?.reps ?? null,
+              weight: normalizeWeight(this.workoutDraft[ex.id]?.[s.key]?.weight),
+              reps: normalizeReps(this.workoutDraft[ex.id]?.[s.key]?.reps),
             }))
             .filter((s) => s.weight != null || s.reps != null),
         }))
         .filter((e) => e.sets.length > 0);
 
-      if (!logExercises.length) {
-        this.showToast("toast_no_data", "error");
-        return;
-      }
+      if (!logExercises.length) return;
 
-      // Save workout log
-      const log = await DB.addWorkoutLog(this.user.uid, {
+      // Upsert a single daily log per program+session+date
+      const log = await DB.upsertWorkoutLogByDate(this.user.uid, {
         programId: this.selectedProgramId,
         programName: this.selectedProgram?.name ?? "",
         sessionId: this.selectedSessionId,
@@ -644,23 +673,31 @@ export function registerStore(Alpine) {
         exercises: logExercises,
       });
 
-      // Update set history on each exercise doc (keep last 5)
+      // Update set history on each exercise doc with one entry per date (keep last 5 dates)
       const updatePromises = this.exercises.map((ex) => {
         const draftSets = this.workoutDraft[ex.id];
         if (!draftSets) return Promise.resolve();
         const updatedHistory = { ...(ex.setHistory ?? {}) };
         for (const [setKey, vals] of Object.entries(draftSets)) {
-          if (vals.weight == null && vals.reps == null) continue;
+          const weight = normalizeWeight(vals.weight);
+          const reps = normalizeReps(vals.reps);
+          if (weight == null && reps == null) continue;
+
           const prev = updatedHistory[setKey] ?? [];
-          updatedHistory[setKey] = [
-            ...prev,
-            {
-              weight: vals.weight ?? 0,
-              reps: vals.reps ?? 0,
-              date: today,
-              logId: log.id,
-            },
-          ].slice(-5);
+          const todayIdx = prev.findIndex((entry) => entry.date === today);
+          const todayEntry = {
+            weight: weight ?? 0,
+            reps: reps ?? 0,
+            date: today,
+            logId: log.id,
+          };
+
+          if (todayIdx >= 0) {
+            prev[todayIdx] = todayEntry;
+            updatedHistory[setKey] = prev;
+          } else {
+            updatedHistory[setKey] = [...prev, todayEntry].slice(-5);
+          }
         }
         ex.setHistory = updatedHistory;
         return DB.saveWorkoutDraftToExercise(
@@ -673,15 +710,26 @@ export function registerStore(Alpine) {
       });
       await Promise.all(updatePromises);
 
-      // Push to local history list
-      if (this.historyLoaded) this.workoutLogs.unshift(log);
+      // Upsert in local history cache too
+      if (this.historyLoaded) {
+        const idx = this.workoutLogs.findIndex((x) => x.id === log.id);
+        const merged = {
+          ...this.workoutLogs[idx],
+          ...log,
+          updatedAt: new Date(),
+        };
+        if (idx >= 0) this.workoutLogs.splice(idx, 1, merged);
+        else this.workoutLogs.unshift(merged);
+      }
 
-      // Clear draft
-      this.workoutDraft = {};
-      this._clearDraft(this.selectedSessionId);
+      if (showToast) {
+        this.showToast("toast_workout_saved");
+        this.closeModal();
+      }
+    },
 
-      this.showToast("toast_workout_saved");
-      this.closeModal();
+    async finishWorkout() {
+      await this.persistWorkoutProgress(true);
     },
 
     // ─── TIMERS ──────────────────────────────────────────────
@@ -848,6 +896,7 @@ export function registerStore(Alpine) {
       }
     },
     _persistDraft: null, // set lazily below
+    _autosaveWorkoutDebounced: null, // set lazily below
     _clearDraft(sid) {
       localStorage.removeItem(this._draftKey(sid));
     },
@@ -879,4 +928,12 @@ export function registerStore(Alpine) {
       JSON.stringify(store.workoutDraft),
     );
   }, 600);
+
+  store._autosaveWorkoutDebounced = debounce(async () => {
+    try {
+      await store.persistWorkoutProgress(false);
+    } finally {
+      store.saveStatus = "saved";
+    }
+  }, 1000);
 }

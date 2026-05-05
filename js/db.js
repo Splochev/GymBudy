@@ -11,6 +11,7 @@ import { db } from "./firebase.js";
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   addDoc,
   setDoc,
@@ -239,9 +240,9 @@ export async function saveWorkoutDraftToExercise(
 }
 
 // ─── WORKOUT LOGS ─────────────────────────────────────────────
-// Log document shape:
+// Log document shape (one document per program + session + date):
 //   programId, programName, sessionId, sessionName,
-//   date (YYYY-MM-DD), loggedAt (Timestamp),
+//   date (YYYY-MM-DD), loggedAt (Timestamp), updatedAt (Timestamp),
 //   exercises: [{ id, name, sets: [{ key, weight, reps }] }]
 
 export async function getWorkoutLogs(uid, maxCount = 50) {
@@ -251,13 +252,29 @@ export async function getWorkoutLogs(uid, maxCount = 50) {
   const snap = await getDocs(
     query(
       col(`users/${uid}/workoutLogs`),
-      orderBy("loggedAt", "desc"),
+      orderBy("date", "desc"),
       limit(maxCount),
     ),
   );
   const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   cacheSet(key, data);
   return data;
+}
+
+export async function upsertWorkoutLogByDate(uid, logData) {
+  const logId = `${logData.programId}__${logData.sessionId}__${logData.date}`;
+  const ref = docR(`users/${uid}/workoutLogs/${logId}`);
+  const snap = await getDoc(ref);
+
+  const payload = {
+    ...logData,
+    updatedAt: serverTimestamp(),
+  };
+  if (!snap.exists()) payload.loggedAt = serverTimestamp();
+
+  await setDoc(ref, payload, { merge: true });
+  cacheBust(`logs:${uid}`);
+  return { id: logId, ...logData };
 }
 
 export async function addWorkoutLog(uid, logData) {
