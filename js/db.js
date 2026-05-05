@@ -7,26 +7,43 @@
 //   /users/{uid}/programs/{pid}/sessions/{sid}/exercises/{eid} — session exercises (flat, supersets via supersetGroup)
 //   /users/{uid}/workoutLogs/{lid}                      — completed workout log entries
 
-import { db } from './firebase.js';
+import { db } from "./firebase.js";
 import {
-  collection, doc, getDocs, addDoc, setDoc, updateDoc,
-  deleteDoc, query, orderBy, limit, writeBatch,
+  collection,
+  doc,
+  getDocs,
+  addDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  orderBy,
+  limit,
+  writeBatch,
   serverTimestamp,
-} from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 // ─── HELPERS ──────────────────────────────────────────────────
-const col  = (...segs) => collection(db, segs.join('/'));
-const docR = (...segs) => doc(db, segs.join('/'));
+const col = (...segs) => collection(db, segs.join("/"));
+const docR = (...segs) => doc(db, segs.join("/"));
 
 // ─── GLOBAL EXERCISES ─────────────────────────────────────────
 export async function getGlobalExercises() {
-  const snap = await getDocs(query(col('exercises'), orderBy('name')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const snap = await getDocs(query(col("exercises"), orderBy("name")));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export async function addGlobalExercise({ name, videoLink = '', muscleGroups = [], createdBy = 'system' }) {
-  const ref = await addDoc(col('exercises'), {
-    name, videoLink, muscleGroups, createdBy,
+export async function addGlobalExercise({
+  name,
+  videoLink = "",
+  muscleGroups = [],
+  createdBy = "system",
+}) {
+  const ref = await addDoc(col("exercises"), {
+    name,
+    videoLink,
+    muscleGroups,
+    createdBy,
     createdAt: serverTimestamp(),
   });
   return { id: ref.id, name, videoLink, muscleGroups, createdBy };
@@ -34,13 +51,16 @@ export async function addGlobalExercise({ name, videoLink = '', muscleGroups = [
 
 // ─── PROGRAMS ─────────────────────────────────────────────────
 export async function getPrograms(uid) {
-  const snap = await getDocs(query(col(`users/${uid}/programs`), orderBy('createdAt')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const snap = await getDocs(
+    query(col(`users/${uid}/programs`), orderBy("createdAt")),
+  );
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export async function addProgram(uid, { name, description = '' }) {
+export async function addProgram(uid, { name, description = "" }) {
   const ref = await addDoc(col(`users/${uid}/programs`), {
-    name, description,
+    name,
+    description,
     createdAt: serverTimestamp(),
   });
   return { id: ref.id, name, description };
@@ -55,8 +75,10 @@ export async function deleteProgram(uid, pid) {
   const sessSnap = await getDocs(col(`users/${uid}/programs/${pid}/sessions`));
   const batch = writeBatch(db);
   for (const sessDoc of sessSnap.docs) {
-    const exSnap = await getDocs(col(`users/${uid}/programs/${pid}/sessions/${sessDoc.id}/exercises`));
-    exSnap.docs.forEach(e => batch.delete(e.ref));
+    const exSnap = await getDocs(
+      col(`users/${uid}/programs/${pid}/sessions/${sessDoc.id}/exercises`),
+    );
+    exSnap.docs.forEach((e) => batch.delete(e.ref));
     batch.delete(sessDoc.ref);
   }
   batch.delete(docR(`users/${uid}/programs/${pid}`));
@@ -65,23 +87,33 @@ export async function deleteProgram(uid, pid) {
 
 // ─── SESSIONS ─────────────────────────────────────────────────
 export async function getSessions(uid, pid) {
-  const snap = await getDocs(query(col(`users/${uid}/programs/${pid}/sessions`), orderBy('order')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const snap = await getDocs(
+    query(col(`users/${uid}/programs/${pid}/sessions`), orderBy("order")),
+  );
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
 export async function addSession(uid, pid, { name, order = 0 }) {
-  const ref = await addDoc(col(`users/${uid}/programs/${pid}/sessions`), { name, order });
+  const ref = await addDoc(col(`users/${uid}/programs/${pid}/sessions`), {
+    name,
+    order,
+  });
   return { id: ref.id, name, order };
 }
 
 export async function updateSession(uid, pid, sid, changes) {
-  await updateDoc(docR(`users/${uid}/programs/${pid}/sessions/${sid}`), changes);
+  await updateDoc(
+    docR(`users/${uid}/programs/${pid}/sessions/${sid}`),
+    changes,
+  );
 }
 
 export async function deleteSession(uid, pid, sid) {
-  const exSnap = await getDocs(col(`users/${uid}/programs/${pid}/sessions/${sid}/exercises`));
+  const exSnap = await getDocs(
+    col(`users/${uid}/programs/${pid}/sessions/${sid}/exercises`),
+  );
   const batch = writeBatch(db);
-  exSnap.docs.forEach(e => batch.delete(e.ref));
+  exSnap.docs.forEach((e) => batch.delete(e.ref));
   batch.delete(docR(`users/${uid}/programs/${pid}/sessions/${sid}`));
   await batch.commit();
 }
@@ -91,11 +123,14 @@ export async function deleteSession(uid, pid, sid) {
 //   name, videoLink, muscleGroups (array), order (number, e.g. 1, 2, 3.1, 3.2),
 //   supersetGroup (string|null), sets (array), markers (array), setHistory (object)
 
-const EXERCISES_PATH = (uid, pid, sid) => `users/${uid}/programs/${pid}/sessions/${sid}/exercises`;
+const EXERCISES_PATH = (uid, pid, sid) =>
+  `users/${uid}/programs/${pid}/sessions/${sid}/exercises`;
 
 export async function getSessionExercises(uid, pid, sid) {
-  const snap = await getDocs(query(col(EXERCISES_PATH(uid, pid, sid)), orderBy('order')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const snap = await getDocs(
+    query(col(EXERCISES_PATH(uid, pid, sid)), orderBy("order")),
+  );
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
 export async function addSessionExercise(uid, pid, sid, exerciseData) {
@@ -117,14 +152,23 @@ export async function batchReorderExercises(uid, pid, sid, exercises) {
   const batch = writeBatch(db);
   for (const ex of exercises) {
     const ref = docR(EXERCISES_PATH(uid, pid, sid), ex.id);
-    batch.update(ref, { order: ex.order, supersetGroup: ex.supersetGroup ?? null });
+    batch.update(ref, {
+      order: ex.order,
+      supersetGroup: ex.supersetGroup ?? null,
+    });
   }
   await batch.commit();
 }
 
 /** Persist today's draft weight/reps AND update rolling set-history.
  *  History keeps the last 5 entries per set key. */
-export async function saveWorkoutDraftToExercise(uid, pid, sid, eid, setHistory) {
+export async function saveWorkoutDraftToExercise(
+  uid,
+  pid,
+  sid,
+  eid,
+  setHistory,
+) {
   const ref = docR(EXERCISES_PATH(uid, pid, sid), eid);
   await updateDoc(ref, { setHistory });
 }
@@ -137,9 +181,13 @@ export async function saveWorkoutDraftToExercise(uid, pid, sid, eid, setHistory)
 
 export async function getWorkoutLogs(uid, maxCount = 50) {
   const snap = await getDocs(
-    query(col(`users/${uid}/workoutLogs`), orderBy('loggedAt', 'desc'), limit(maxCount))
+    query(
+      col(`users/${uid}/workoutLogs`),
+      orderBy("loggedAt", "desc"),
+      limit(maxCount),
+    ),
   );
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
 export async function addWorkoutLog(uid, logData) {

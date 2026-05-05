@@ -1,114 +1,187 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GymBud – Sign In</title>
-  <link rel="stylesheet" href="./css/app.css">
-  <style>
-    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .auth-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 36px; width: 100%;
-      max-width: 520px; box-shadow: var(--shadow); animation: fadeIn .3s;
-    }
-    .auth-logo { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 28px; }
-    .auth-logo span { font-size: 1.5rem; font-weight: 700; color: var(--accent); letter-spacing: -.5px; }
-    .auth-logo svg  { width: 32px; height: 32px; color: var(--accent); }
-    .form-label { display: block; font-size: .8rem; color: var(--text2); margin-bottom: 4px; font-weight: 500; }
-    .form-group { margin-bottom: 16px; }
-    .form-group input { width: 100%; }
-
-    .error-box { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); border-radius: var(--radius-sm); padding: 10px 14px; color: #fca5a5; font-size: .8rem; margin-bottom: 16px; }
-  </style>
-</head>
-<body>
-
-<div x-data="authPage()">
-  <div class="auth-card">
-    <!-- Logo -->
-    <div class="auth-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="2" y="9" width="3" height="6" rx="1"/>
-        <rect x="19" y="9" width="3" height="6" rx="1"/>
-        <rect x="5" y="7" width="3" height="10" rx="1"/>
-        <rect x="16" y="7" width="3" height="10" rx="1"/>
-        <line x1="8" y1="12" x2="16" y2="12"/>
-      </svg>
-      <span>GymBud</span>
-    </div>
-
-    <!-- Error -->
-    <div x-show="error" class="error-box" x-text="error"></div>
-
-    <!-- Login Form -->
-    <div>
-      <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:4px">Welcome back</h2>
-      <p style="color:var(--text3);font-size:.85rem;margin-bottom:20px">Sign in to your account</p>
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input type="email" x-model="email" @keyup.enter="login()" placeholder="you@example.com">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input type="password" x-model="password" @keyup.enter="login()" placeholder="••••••••">
-      </div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px 16px"
-              @click="login()" :disabled="loading">
-        <span x-show="!loading">Sign In</span>
-        <span x-show="loading">Signing in…</span>
-      </button>
-    </div>
-  </div>
-</div>
-
-<script type="module">
-  import Alpine from 'https://cdn.jsdelivr.net/npm/alpinejs@3/dist/module.esm.js';
-  import { auth } from './js/firebase.js';
-  import {
-    signInWithEmailAndPassword,
-    onAuthStateChanged,
-  } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js';
-
-  // If already logged in, go straight to app
-  onAuthStateChanged(auth, user => {
-    if (user) window.location.href = './app.html';
-  });
-
-  Alpine.data('authPage', () => ({
-    email:    '',
-    password: '',
-    loading:  false,
-    error:    '',
-
-    async login() {
-      this.error = '';
-      if (!this.email || !this.password) { this.error = 'Please fill in all fields.'; return; }
-      this.loading = true;
-      try {
-        await signInWithEmailAndPassword(auth, this.email, this.password);
-        window.location.href = './app.html';
-      } catch (e) {
-        this.error = this._friendly(e.code);
-      } finally {
-        this.loading = false;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GymBud – Sign In</title>
+    <link rel="stylesheet" href="./css/app.css" />
+    <style>
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
       }
-    },
+      .auth-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 36px;
+        width: 100%;
+        max-width: 520px;
+        box-shadow: var(--shadow);
+        animation: fadeIn 0.3s;
+      }
+      .auth-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 28px;
+      }
+      .auth-logo span {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent);
+        letter-spacing: -0.5px;
+      }
+      .auth-logo svg {
+        width: 32px;
+        height: 32px;
+        color: var(--accent);
+      }
+      .form-label {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--text2);
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+      .form-group {
+        margin-bottom: 16px;
+      }
+      .form-group input {
+        width: 100%;
+      }
 
-    _friendly(code) {
-      const map = {
-        'auth/user-not-found':       'No account found with that email.',
-        'auth/wrong-password':       'Incorrect password.',
-        'auth/invalid-credential':   'Invalid email or password.',
-        'auth/email-already-in-use': 'An account with this email already exists.',
-        'auth/too-many-requests':    'Too many attempts. Please try again later.',
-        'auth/network-request-failed': 'Network error. Check your connection.',
-      };
-      return map[code] ?? 'An error occurred. Please try again.';
-    },
-  }));
+      .error-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: var(--radius-sm);
+        padding: 10px 14px;
+        color: #fca5a5;
+        font-size: 0.8rem;
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div x-data="authPage()">
+      <div class="auth-card">
+        <!-- Logo -->
+        <div class="auth-logo">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="2" y="9" width="3" height="6" rx="1" />
+            <rect x="19" y="9" width="3" height="6" rx="1" />
+            <rect x="5" y="7" width="3" height="10" rx="1" />
+            <rect x="16" y="7" width="3" height="10" rx="1" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+          </svg>
+          <span>GymBud</span>
+        </div>
 
-  Alpine.start();
-</script>
-</body>
+        <!-- Error -->
+        <div x-show="error" class="error-box" x-text="error"></div>
+
+        <!-- Login Form -->
+        <div>
+          <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px">
+            Welcome back
+          </h2>
+          <p
+            style="color: var(--text3); font-size: 0.85rem; margin-bottom: 20px"
+          >
+            Sign in to your account
+          </p>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input
+              type="email"
+              x-model="email"
+              @keyup.enter="login()"
+              placeholder="you@example.com"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input
+              type="password"
+              x-model="password"
+              @keyup.enter="login()"
+              placeholder="••••••••"
+            />
+          </div>
+          <button
+            class="btn btn-primary"
+            style="width: 100%; justify-content: center; padding: 10px 16px"
+            @click="login()"
+            :disabled="loading"
+          >
+            <span x-show="!loading">Sign In</span>
+            <span x-show="loading">Signing in…</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import Alpine from "https://cdn.jsdelivr.net/npm/alpinejs@3/dist/module.esm.js";
+      import { auth } from "./js/firebase.js";
+      import {
+        signInWithEmailAndPassword,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
+      // If already logged in, go straight to workout page
+      onAuthStateChanged(auth, (user) => {
+        if (user) window.location.href = "./workout.html";
+      });
+
+      Alpine.data("authPage", () => ({
+        email: "",
+        password: "",
+        loading: false,
+        error: "",
+
+        async login() {
+          this.error = "";
+          if (!this.email || !this.password) {
+            this.error = "Please fill in all fields.";
+            return;
+          }
+          this.loading = true;
+          try {
+            await signInWithEmailAndPassword(auth, this.email, this.password);
+            window.location.href = "./workout.html";
+          } catch (e) {
+            this.error = this._friendly(e.code);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        _friendly(code) {
+          const map = {
+            "auth/user-not-found": "No account found with that email.",
+            "auth/wrong-password": "Incorrect password.",
+            "auth/invalid-credential": "Invalid email or password.",
+            "auth/email-already-in-use":
+              "An account with this email already exists.",
+            "auth/too-many-requests":
+              "Too many attempts. Please try again later.",
+            "auth/network-request-failed":
+              "Network error. Check your connection.",
+          };
+          return map[code] ?? "An error occurred. Please try again.";
+        },
+      }));
+
+      Alpine.start();
+    </script>
+  </body>
 </html>
