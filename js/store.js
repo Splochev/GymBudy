@@ -70,7 +70,7 @@ export function registerStore(Alpine) {
     // ── Navigation ───────────────────────────────────────────
     view: "workout", // 'workout' | 'history'
     mode: "workout", // 'workout' | 'config'
-    sidebarOpen: false,
+    sidebarOpen: true,
 
     // ── Data ─────────────────────────────────────────────────
     programs: [],
