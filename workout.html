@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GymBud – Workout Manager</title>
+    <title>GymBudy – Workout Manager</title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="stylesheet" href="./css/app.css" />
   </head>
@@ -110,7 +110,7 @@
                 <rect x="16" y="7" width="3" height="10" rx="1" />
                 <line x1="8" y1="12" x2="16" y2="12" />
               </svg>
-              GymBud
+              GymBudy
             </div>
 
             <!-- Navigation tabs -->
@@ -245,7 +245,7 @@
                       <rect x="16" y="7" width="3" height="10" rx="1" />
                       <line x1="8" y1="12" x2="16" y2="12" />
                     </svg>
-                    GymBud
+                    GymBudy
                   </div>
                   <button
                     class="btn-icon"
@@ -1051,9 +1051,10 @@
                                             <template
                                               x-for="mg in (Array.isArray(ex.muscleGroups) ? ex.muscleGroups : (ex.muscleGroups||'').split(','))"
                                               :key="mg"
+                                              class="ex-card-header-badges"
                                             >
                                               <span
-                                                class="badge"
+                                                class="badge ex-card-header-badges"
                                                 x-text="mg.trim()"
                                                 style="font-size: 0.65rem"
                                               ></span>
@@ -1107,6 +1108,27 @@
                                                 />
                                               </svg>
                                             </button>
+                                          </div>
+                                          <!-- Mobile-only badge row -->
+                                          <div
+                                            class="ex-card-mobile-badges"
+                                            style="
+                                              padding: 0 14px 8px;
+                                              display: none;
+                                              flex-wrap: wrap;
+                                              gap: 4px;
+                                            "
+                                          >
+                                            <template
+                                              x-for="mg in (Array.isArray(ex.muscleGroups) ? ex.muscleGroups : (ex.muscleGroups||'').split(','))"
+                                              :key="mg"
+                                            >
+                                              <span
+                                                class="badge"
+                                                x-text="mg.trim()"
+                                                style="font-size: 0.65rem"
+                                              ></span>
+                                            </template>
                                           </div>
                                           <!-- Sets + markers collapsed by default -->
                                           <div
@@ -1353,9 +1375,10 @@
                                     <template
                                       x-for="mg in (Array.isArray(item.muscleGroups) ? item.muscleGroups : (item.muscleGroups||'').split(','))"
                                       :key="mg"
+                                      class="ex-card-header-badges"
                                     >
                                       <span
-                                        class="badge"
+                                        class="badge ex-card-header-badges"
                                         x-text="mg.trim()"
                                         style="font-size: 0.65rem"
                                       ></span>
@@ -1401,6 +1424,27 @@
                                         />
                                       </svg>
                                     </button>
+                                  </div>
+                                  <!-- Mobile-only badge row -->
+                                  <div
+                                    class="ex-card-mobile-badges"
+                                    style="
+                                      padding: 0 14px 8px;
+                                      display: none;
+                                      flex-wrap: wrap;
+                                      gap: 4px;
+                                    "
+                                  >
+                                    <template
+                                      x-for="mg in (Array.isArray(item.muscleGroups) ? item.muscleGroups : (item.muscleGroups||'').split(','))"
+                                      :key="mg"
+                                    >
+                                      <span
+                                        class="badge"
+                                        x-text="mg.trim()"
+                                        style="font-size: 0.65rem"
+                                      ></span>
+                                    </template>
                                   </div>
                                   <div
                                     style="
@@ -1690,6 +1734,49 @@
                                     padding: 0 16px 16px;
                                   "
                                 >
+                                  <!-- Active exercise metadata bar -->
+                                  <div style="display:flex;align-items:center;gap:8px;padding:10px 0 6px;flex-wrap:wrap;">
+                                    <div style="font-weight:600;font-size:0.85rem;flex-shrink:0" x-text="activeEx.name"></div>
+                                    <template
+                                      x-for="mg in (Array.isArray(activeEx.muscleGroups) ? activeEx.muscleGroups : (activeEx.muscleGroups||'').split(','))"
+                                      :key="mg"
+                                    >
+                                      <span class="badge" x-text="mg.trim()" style="font-size:0.65rem"></span>
+                                    </template>
+                                    <div
+                                      x-show="activeEx.videoLink"
+                                      x-data="{ hovered: false, tipX: 0, tipY: 0 }"
+                                      style="position:relative;flex-shrink:0"
+                                      @click.stop
+                                    >
+                                      <a
+                                        :href="activeEx.videoLink"
+                                        target="_blank"
+                                        class="btn-icon"
+                                        style="color:var(--accent)"
+                                        @mouseenter="hovered=true;tipX=$event.clientX;tipY=$event.clientY"
+                                        @mousemove="tipX=$event.clientX;tipY=$event.clientY"
+                                        @mouseleave="hovered=false"
+                                      >
+                                        <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                          <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                                          <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                                        </svg>
+                                      </a>
+                                      <template x-if="hovered && /youtu/.test(activeEx.videoLink)">
+                                        <div
+                                          class="video-tip"
+                                          :style="`top:${tipY+14}px;left:${Math.min(tipX-20,window.innerWidth-280)}px`"
+                                          style="position:fixed"
+                                        >
+                                          <img
+                                            :src="'https://img.youtube.com/vi/'+(activeEx.videoLink.match(/(?:v=|youtu\.be\/|embed\/)([^&?\/\s]{11})/)||[])[1]+'/mqdefault.jpg'"
+                                            :alt="activeEx.name"
+                                          />
+                                        </div>
+                                      </template>
+                                    </div>
+                                  </div>
                                   <div class="ss-tabs">
                                     <template
                                       x-for="ex in item.items"
@@ -1714,7 +1801,7 @@
                                           color: var(--accent);
                                           font-size: 0.85rem;
                                         "
-                                        x-text="$store.gym.t('set_abbr')+(setIndex+1)"
+                                        x-text="$store.gym.t('set_abbr')+' '+(setIndex+1)"
                                       ></div>
                                       <div
                                         class="target-reps"
@@ -1811,7 +1898,7 @@
                                 class="workout-card"
                                 style="margin-bottom: 10px"
                               >
-                                <div
+                                  <div
                                   class="workout-card-header"
                                   @click="$store.gym.toggleExpand(item.id)"
                                 >
@@ -1869,6 +1956,40 @@
                                       ></span>
                                     </div>
                                   </div>
+                                  <!-- Video link with thumbnail tooltip -->
+                                  <div
+                                    x-show="item.videoLink"
+                                    x-data="{ hovered: false, tipX: 0, tipY: 0 }"
+                                    style="position: relative; flex-shrink: 0"
+                                    @click.stop
+                                  >
+                                    <a
+                                      :href="item.videoLink"
+                                      target="_blank"
+                                      class="btn-icon"
+                                      style="color: var(--accent)"
+                                      @mouseenter="hovered = true; tipX = $event.clientX; tipY = $event.clientY"
+                                      @mousemove="tipX = $event.clientX; tipY = $event.clientY"
+                                      @mouseleave="hovered = false"
+                                    >
+                                      <svg style="width: 15px; height: 15px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                                        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                                      </svg>
+                                    </a>
+                                    <template x-if="hovered && /youtu/.test(item.videoLink)">
+                                      <div
+                                        class="video-tip"
+                                        :style="`top:${tipY + 14}px;left:${Math.min(tipX - 20, window.innerWidth - 280)}px`"
+                                        style="position: fixed"
+                                      >
+                                        <img
+                                          :src="'https://img.youtube.com/vi/' + (item.videoLink.match(/(?:v=|youtu\.be\/|embed\/)([^&?\/\s]{11})/)||[])[1] + '/mqdefault.jpg'"
+                                          :alt="item.name"
+                                        />
+                                      </div>
+                                    </template>
+                                  </div>
                                   <svg
                                     :style="'width:18px;height:18px;transition:transform .2s;flex-shrink:0;' + ($store.gym.expandedId===item.id ? 'transform:rotate(180deg)' : '')"
                                     viewBox="0 0 24 24"
@@ -1897,7 +2018,7 @@
                                           color: var(--accent);
                                           font-size: 0.85rem;
                                         "
-                                        x-text="$store.gym.t('set_abbr')+(setIndex+1)"
+                                        x-text="$store.gym.t('set_abbr')+''+(setIndex+1)"
                                       ></div>
                                       <div
                                         class="target-reps"
@@ -2001,13 +2122,22 @@
                           class="empty-state"
                           style="padding-top: 40px"
                         >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
                             <path d="M3 3v5h5" />
                             <path d="M3.05 13A9 9 0 106 5.3L3 8" />
                             <path d="M12 7v5l4 2" />
                           </svg>
                           <h3
-                            style="font-size: 1rem; color: var(--text2); margin-bottom: 6px"
+                            style="
+                              font-size: 1rem;
+                              color: var(--text2);
+                              margin-bottom: 6px;
+                            "
                             x-text="$store.gym.t('no_history_yet')"
                           ></h3>
                           <p
@@ -2015,32 +2145,82 @@
                             x-text="$store.gym.t('no_history_yet_desc')"
                           ></p>
                         </div>
-                        <template x-for="log in $store.gym.sessionLogs()" :key="log.id">
+                        <template
+                          x-for="log in $store.gym.sessionLogs()"
+                          :key="log.id"
+                        >
                           <div x-data="{ open: false }" class="log-card">
                             <div class="log-header" @click="open=!open">
-                              <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
-                                <div style="font-size:0.75rem;color:var(--text3);display:flex;gap:12px">
-                                  <span x-text="$store.gym.formatDate(log.date)"></span>
-                                  <span x-text="$store.gym.relativeDate(log.date)"></span>
-                                  <span x-text="$store.gym.t('exercises_count', log.exercises.length)"></span>
+                              <div
+                                style="
+                                  display: flex;
+                                  flex-direction: column;
+                                  gap: 2px;
+                                  flex: 1;
+                                  min-width: 0;
+                                "
+                              >
+                                <div
+                                  style="
+                                    font-size: 0.75rem;
+                                    color: var(--text3);
+                                    display: flex;
+                                    gap: 12px;
+                                  "
+                                >
+                                  <span
+                                    x-text="$store.gym.formatDate(log.date)"
+                                  ></span>
+                                  <span
+                                    x-text="$store.gym.relativeDate(log.date)"
+                                  ></span>
+                                  <span
+                                    x-text="$store.gym.t('exercises_count', log.exercises.length)"
+                                  ></span>
                                 </div>
                               </div>
                               <svg
                                 :style="'width:16px;height:16px;transition:transform .2s;color:var(--text3);flex-shrink:0;' + (open ? 'transform:rotate(180deg)' : '')"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
                               >
                                 <path d="M6 9l6 6 6-6" />
                               </svg>
                             </div>
-                            <div x-show="open" style="padding:0 16px 16px;border-top:1px solid var(--border)">
-                              <template x-for="logExercise in log.exercises" :key="logExercise.name">
-                                <div style="margin-top:12px">
+                            <div
+                              x-show="open"
+                              style="
+                                padding: 0 16px 16px;
+                                border-top: 1px solid var(--border);
+                              "
+                            >
+                              <template
+                                x-for="logExercise in log.exercises"
+                                :key="logExercise.name"
+                              >
+                                <div style="margin-top: 12px">
                                   <div
-                                    style="font-weight:600;font-size:0.85rem;margin-bottom:6px;color:var(--text)"
+                                    style="
+                                      font-weight: 600;
+                                      font-size: 0.85rem;
+                                      margin-bottom: 6px;
+                                      color: var(--text);
+                                    "
                                     x-text="logExercise.name"
                                   ></div>
-                                  <div style="display:flex;flex-wrap:wrap;gap:6px">
-                                    <template x-for="(logSet, logSetIndex) in logExercise.sets" :key="logSetIndex">
+                                  <div
+                                    style="
+                                      display: flex;
+                                      flex-wrap: wrap;
+                                      gap: 6px;
+                                    "
+                                  >
+                                    <template
+                                      x-for="(logSet, logSetIndex) in logExercise.sets"
+                                      :key="logSetIndex"
+                                    >
                                       <span
                                         class="badge"
                                         x-text="(logSet.weight??0)+'kg × '+(logSet.reps??0)+$store.gym.t('reps_abbr')"
@@ -2054,12 +2234,10 @@
                         </template>
                       </div>
                     </template>
-
                   </div>
                   <!-- /content body -->
                 </div>
               </template>
-
             </main>
             <!-- /main content -->
           </div>

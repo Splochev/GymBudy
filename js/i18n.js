@@ -3,7 +3,7 @@
 export const translations = {
   en: {
     // ── Loading / misc ────────────────────────────────────────
-    loading: "Loading GymBud…",
+    loading: "Loading GymBudy…",
 
     // ── Top bar ───────────────────────────────────────────────
     workouts: "Workouts",
@@ -23,7 +23,7 @@ export const translations = {
     // ── Toolbar ───────────────────────────────────────────────
     mode_workout: "Workout",
     mode_configure: "Configure",
-    weight_goals: "Weight Goals",
+    weight_goals: "Target",
     finish_workout: "Finish Workout",
     saving: "Saving…",
     saved: "Saved",
@@ -39,8 +39,7 @@ export const translations = {
     no_exercises_yet: "No exercises yet",
     no_exercises_yet_desc: "Use the search box above to add exercises.",
     no_exercises: "No exercises",
-    no_exercises_desc:
-      "Switch to Configure to add exercises to this day.",
+    no_exercises_desc: "Switch to Configure to add exercises to this day.",
 
     // ── Config mode ───────────────────────────────────────────
     superset: "Superset",
@@ -49,7 +48,7 @@ export const translations = {
     periodization: "Periodization",
     intensity_volume: "Intensity Volume",
     load_increment: "Load Inc.",
-    reps: "Reps for set",
+    reps: "Reps",
     rest_mmss: "Rest (mm:ss)",
 
     // ── Workout mode ──────────────────────────────────────────
@@ -73,7 +72,7 @@ export const translations = {
     edit_session_title: "Edit Workout Day",
     delete_session_title: "Delete Workout Day",
     add_exercise_title: "Add New Exercise",
-    weight_goals_title: "Weight Goals",
+    weight_goals_title: "Target",
     weight_goals_desc: "Based on last workout + Load Increment (LI)",
     weight_goals_empty: "Work out at least once to generate goals.",
     finish_workout_title: "Finish Workout",
@@ -84,8 +83,7 @@ export const translations = {
     confirm_delete_prefix: "Delete ",
     delete_program_suffix:
       "? This will also delete all workout days and exercises. This cannot be undone.",
-    delete_session_suffix:
-      "? All exercises in this day will also be removed.",
+    delete_session_suffix: "? All exercises in this day will also be removed.",
 
     // ── Form labels ───────────────────────────────────────────
     label_name: "Name",
@@ -137,14 +135,34 @@ export const translations = {
 
     // ── Month / day names (for date formatting) ───────────────
     months: [
-      "January","February","March","April","May","June",
-      "July","August","September","October","November","December",
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ],
     months_short: [
-      "Jan","Feb","Mar","Apr","May","Jun",
-      "Jul","Aug","Sep","Oct","Nov","Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ],
-    days_short: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+    days_short: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
 
     // ── Login page ────────────────────────────────────────────
     welcome_back: "Welcome back",
@@ -167,7 +185,7 @@ export const translations = {
 
   bg: {
     // ── Loading / misc ────────────────────────────────────────
-    loading: "Зарежда GymBud…",
+    loading: "Зарежда GymBudy…",
 
     // ── Top bar ───────────────────────────────────────────────
     workouts: "Тренировки",
@@ -187,10 +205,10 @@ export const translations = {
     // ── Toolbar ───────────────────────────────────────────────
     mode_workout: "Тренировка",
     mode_configure: "Настройки",
-    weight_goals: "Цели за тежести",
+    weight_goals: "Цел",
     finish_workout: "Приключи тренировка",
-    saving: "Записва…",
-    saved: "Записано",
+    saving: "Запазва...",
+    saved: "Запазено",
     add_exercise_placeholder: "Добави упражнение…",
     merge_label: "Обедини",
     add_new_exercise: "Добави ново упражнение…",
@@ -214,7 +232,7 @@ export const translations = {
     periodization: "Периодизация",
     intensity_volume: "Интензивност (ИО %)",
     load_increment: "Прираст на натоварв.",
-    reps: "Повторения за серия",
+    reps: "Повторения",
     rest_mmss: "Почивка (мм:сс)",
 
     // ── Workout mode ──────────────────────────────────────────
@@ -241,8 +259,7 @@ export const translations = {
     weight_goals_title: "Цели за тежести",
     weight_goals_desc:
       "Базирано на последна тренировка + Приращение на натоварването (ПН)",
-    weight_goals_empty:
-      "Тренирайте поне веднъж, за да генерирате цели.",
+    weight_goals_empty: "Тренирайте поне веднъж, за да генерирате цели.",
     finish_workout_title: "Приключи тренировка",
     finish_workout_desc:
       "Това ще запише дневника на тренировката и ще обнови историята ви.",
@@ -304,14 +321,34 @@ export const translations = {
 
     // ── Month / day names ─────────────────────────────────────
     months: [
-      "Януари","Февруари","Март","Април","Май","Юни",
-      "Юли","Август","Септември","Октомври","Ноември","Декември",
+      "Януари",
+      "Февруари",
+      "Март",
+      "Април",
+      "Май",
+      "Юни",
+      "Юли",
+      "Август",
+      "Септември",
+      "Октомври",
+      "Ноември",
+      "Декември",
     ],
     months_short: [
-      "Яну","Фев","Мар","Апр","Май","Юни",
-      "Юли","Авг","Сеп","Окт","Ное","Дек",
+      "Яну",
+      "Фев",
+      "Мар",
+      "Апр",
+      "Май",
+      "Юни",
+      "Юли",
+      "Авг",
+      "Сеп",
+      "Окт",
+      "Ное",
+      "Дек",
     ],
-    days_short: ["Нед","Пон","Вт","Ср","Чет","Пет","Съб"],
+    days_short: ["Нед", "Пон", "Вт", "Ср", "Чет", "Пет", "Съб"],
 
     // ── Login page ────────────────────────────────────────────
     welcome_back: "Добре дошли",

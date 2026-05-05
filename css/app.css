@@ -635,3 +635,16 @@ input[type="checkbox"] {
     display: none !important;
   }
 }
+@media (max-width: 600px) {
+  .ex-card-header-badges {
+    display: none !important;
+  }
+  .ex-card-mobile-badges {
+    display: flex !important;
+  }
+}
+@media (min-width: 601px) {
+  .ex-card-mobile-badges {
+    display: none !important;
+  }
+}

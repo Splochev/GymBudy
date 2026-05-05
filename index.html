@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GymBud – Sign In</title>
+    <title>GymBudy – Sign In</title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="stylesheet" href="./css/app.css" />
     <style>
@@ -68,7 +68,7 @@
     </style>
   </head>
   <body>
-    <div x-data="authPage()" style="width:100%;max-width:560px">
+    <div x-data="authPage()" style="width: 100%; max-width: 560px">
       <div class="auth-card">
         <!-- Logo -->
         <div class="auth-logo">
@@ -84,16 +84,23 @@
             <rect x="16" y="7" width="3" height="10" rx="1" />
             <line x1="8" y1="12" x2="16" y2="12" />
           </svg>
-          <span>GymBud</span>
+          <span>GymBudy</span>
         </div>
 
         <!-- Language toggle -->
-        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <div
+          style="display: flex; justify-content: flex-end; margin-bottom: 12px"
+        >
           <button
             class="btn btn-ghost btn-sm"
             @click="setLang(lang === 'en' ? 'bg' : 'en')"
             :title="lang === 'en' ? 'Switch to Bulgarian' : 'Смени на английски'"
-            style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; letter-spacing: 0.5px"
+            style="
+              font-size: 0.75rem;
+              font-weight: 700;
+              padding: 4px 10px;
+              letter-spacing: 0.5px;
+            "
             x-text="lang === 'en' ? 'EN' : 'BG'"
           ></button>
         </div>
@@ -103,7 +110,10 @@
 
         <!-- Login Form -->
         <div>
-          <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px" x-text="t('welcome_back')"></h2>
+          <h2
+            style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px"
+            x-text="t('welcome_back')"
+          ></h2>
           <p
             style="color: var(--text3); font-size: 0.85rem; margin-bottom: 20px"
             x-text="t('sign_in_desc')"

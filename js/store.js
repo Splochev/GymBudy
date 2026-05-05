@@ -522,12 +522,35 @@ export function registerStore(Alpine) {
     },
 
     getDraftSet(eid, setKey) {
-      return this.workoutDraft[eid]?.[setKey] ?? {};
+      const draft = this.workoutDraft[eid]?.[setKey] ?? {};
+      const hasWeight = draft.weight !== undefined && draft.weight !== null && draft.weight !== "";
+      const hasReps = draft.reps !== undefined && draft.reps !== null && draft.reps !== "";
+      if (hasWeight && hasReps) return draft;
+
+      const ex = this.exercises.find((e) => e.id === eid);
+      const hist = ex?.setHistory?.[setKey] ?? [];
+      const today = todayStr();
+      let todayEntry = null;
+      for (let i = hist.length - 1; i >= 0; i--) {
+        if (hist[i]?.date === today) {
+          todayEntry = hist[i];
+          break;
+        }
+      }
+      if (!todayEntry) return draft;
+
+      return {
+        ...draft,
+        weight: hasWeight ? draft.weight : (todayEntry.weight ?? ""),
+        reps: hasReps ? draft.reps : (todayEntry.reps ?? ""),
+      };
     },
 
     getSetHistory(eid, setKey) {
       const ex = this.exercises.find((e) => e.id === eid);
-      return ex?.setHistory?.[setKey] ?? [];
+      const hist = ex?.setHistory?.[setKey] ?? [];
+      const today = todayStr();
+      return hist.filter((h) => h?.date !== today);
     },
 
     /** Apply weight goals: for each exercise with LI marker, prefill last weight + LI. */
@@ -537,11 +560,22 @@ export function registerStore(Alpine) {
         for (const set of ex.sets) {
           const hist = ex.setHistory?.[set.key];
           if (hist?.length) {
-            const lastW = hist[hist.length - 1].weight ?? 0;
+            const today = todayStr();
+            let lastEntry = null;
+            for (let i = hist.length - 1; i >= 0; i--) {
+              if (hist[i]?.date !== today) {
+                lastEntry = hist[i];
+                break;
+              }
+            }
+            if (!lastEntry) continue;
+
+            const lastW = Number.parseFloat(lastEntry.weight ?? 0) || 0;
+            const goal = Math.round((lastW + li) * 100) / 100;
             if (!this.workoutDraft[ex.id]) this.workoutDraft[ex.id] = {};
             if (!this.workoutDraft[ex.id][set.key])
               this.workoutDraft[ex.id][set.key] = {};
-            this.workoutDraft[ex.id][set.key].weight = lastW + li;
+            this.workoutDraft[ex.id][set.key].weight = goal;
           }
         }
       }
@@ -558,8 +592,19 @@ export function registerStore(Alpine) {
         for (const set of ex.sets) {
           const hist = ex.setHistory?.[set.key];
           if (hist?.length) {
-            const lastW = hist[hist.length - 1].weight ?? 0;
-            setRows.push({ key: set.key, lastW, goal: lastW + li });
+            const today = todayStr();
+            let lastEntry = null;
+            for (let i = hist.length - 1; i >= 0; i--) {
+              if (hist[i]?.date !== today) {
+                lastEntry = hist[i];
+                break;
+              }
+            }
+            if (!lastEntry) continue;
+
+            const lastW = Number.parseFloat(lastEntry.weight ?? 0) || 0;
+            const goal = Math.round((lastW + li) * 100) / 100;
+            setRows.push({ key: set.key, lastW, goal });
           }
         }
         if (setRows.length) rows.push({ name: ex.name, li, sets: setRows });
