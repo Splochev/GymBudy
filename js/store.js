@@ -1,0 +1,656 @@
+// js/store.js — Alpine.js global store + all application logic
+//
+// Register with: registerStore(Alpine) before Alpine.start()
+
+import { auth, db } from './firebase.js';
+import * as DB from './db.js';
+import {
+  onAuthStateChanged, signOut,
+} from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js';
+import {
+  debounce, beep, restToSeconds, secondsToRest,
+  todayStr, formatDate, getMonthYear, relativeDate, generateId,
+} from './utils.js';
+
+const MUSCLE_GROUPS  = ['Neck','Traps','Shoulders','Chest','Biceps','Forearms','Abs','Quadriceps','Calves','Upper Back','Triceps','Lower Back','Glutes','Hamstring'];
+const PERIODIZATIONS = ['Linear','Set Range'];
+const IV_VALUES      = ['10','20','30','40','50','60','70','80','90','100'];
+const LI_VALUES      = ['0.25','0.5','0.75','1','1.25','2','5'];
+
+// ─── HELPERS (non-reactive) ───────────────────────────────────
+function getMarker(ex, name) {
+  return (ex.markers || []).find(m => m.marker === name)?.markerValue ?? null;
+}
+function setMarker(ex, name, value) {
+  if (!ex.markers) ex.markers = [];
+  const m = ex.markers.find(x => x.marker === name);
+  if (value) { if (m) m.markerValue = value; else ex.markers.push({ marker: name, markerValue: value }); }
+  else ex.markers = ex.markers.filter(x => x.marker !== name);
+}
+function flatExercises(list) {
+  const out = [];
+  for (const item of list) {
+    if (item.isSuperset) item.items.forEach(e => out.push(e)); else out.push(item);
+  }
+  return out;
+}
+
+export function registerStore(Alpine) {
+  Alpine.store('gym', {
+    // ── Auth ─────────────────────────────────────────────────
+    user:         null,
+    loading:      true,
+
+    // ── Navigation ───────────────────────────────────────────
+    view:         'workout',   // 'workout' | 'history'
+    mode:         'workout',   // 'workout' | 'config'
+    sidebarOpen:  false,
+
+    // ── Data ─────────────────────────────────────────────────
+    programs:           [],
+    selectedProgramId:  null,
+    sessions:           [],
+    selectedSessionId:  null,
+    exercises:          [],   // flat Firestore docs for the active session
+    globalExercises:    [],
+    workoutLogs:        [],
+    historyLoaded:      false,
+
+    // ── Config state ─────────────────────────────────────────
+    mergeSet:     [],          // exercise IDs staged for superset merge
+    dragIdx:      null,        // index of the item being dragged
+    searchQuery:  '',
+    searchOpen:   false,
+    saveStatus:   'saved',     // 'saved' | 'saving'
+
+    // ── Workout state ─────────────────────────────────────────
+    expandedId:   null,        // exercise doc ID expanded in workout mode
+    workoutDraft: {},          // { exerciseId: { "Set 1": { weight, reps }, ... } }
+    activeTimers: {},          // { "eid-setIdx": { remaining, intervalId } }
+
+    // ── UI state ─────────────────────────────────────────────
+    modal:        null,        // { type: string, data: any }
+    modalForm:    {},
+    modalChips:   [],          // selected muscle-group chips in add-exercise modal
+    toasts:       [],
+    manageOpen:   false,
+
+    // ─── CONSTANTS (accessible from templates) ────────────────
+    MUSCLE_GROUPS,
+    PERIODIZATIONS,
+    IV_VALUES,
+    LI_VALUES,
+
+    // ─── COMPUTED ────────────────────────────────────────────
+    get selectedProgram() {
+      return this.programs.find(p => p.id === this.selectedProgramId) ?? null;
+    },
+    get selectedSession() {
+      return this.sessions.find(s => s.id === this.selectedSessionId) ?? null;
+    },
+
+    /** Exercises grouped into display items (standalone or superset). */
+    get displayExercises() {
+      const sorted = [...this.exercises].sort((a, b) => a.order - b.order);
+      const result = [];
+      const ssMap  = new Map();
+      for (const ex of sorted) {
+        if (ex.supersetGroup) {
+          if (!ssMap.has(ex.supersetGroup)) {
+            const g = { isSuperset: true, supersetGroup: ex.supersetGroup, items: [], order: ex.order };
+            ssMap.set(ex.supersetGroup, g);
+            result.push(g);
+          }
+          ssMap.get(ex.supersetGroup).items.push(ex);
+        } else {
+          result.push({ isSuperset: false, ...ex });
+        }
+      }
+      return result;
+    },
+
+    /** Exercises visible in the autocomplete dropdown. */
+    get filteredGlobal() {
+      const q = this.searchQuery.toLowerCase().trim();
+      const src = q ? this.globalExercises.filter(e => e.name.toLowerCase().includes(q)) : this.globalExercises;
+      return src.slice(0, 10);
+    },
+
+    get hasUnsaved() { return this.saveStatus === 'saving'; },
+
+    // ─── INIT ────────────────────────────────────────────────
+    async init() {
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          window.location.href = './index.html';
+          return;
+        }
+        this.user = user;
+        await this.loadInitialData();
+        this.loading = false;
+      });
+    },
+
+    async loadInitialData() {
+      const [programs, globalExercises] = await Promise.all([
+        DB.getPrograms(this.user.uid),
+        DB.getGlobalExercises(),
+      ]);
+      this.programs        = programs;
+      this.globalExercises = globalExercises;
+      if (programs.length > 0) await this.selectProgram(programs[0].id);
+    },
+
+    async logout() {
+      await signOut(auth);
+      window.location.href = './index.html';
+    },
+
+    // ─── NAVIGATION ──────────────────────────────────────────
+    async switchView(v) {
+      this.view = v;
+      if (v === 'history' && !this.historyLoaded) {
+        this.workoutLogs  = await DB.getWorkoutLogs(this.user.uid);
+        this.historyLoaded = true;
+      }
+    },
+
+    // ─── PROGRAMS ────────────────────────────────────────────
+    async selectProgram(pid) {
+      this.selectedProgramId = pid;
+      this.selectedSessionId = null;
+      this.exercises         = [];
+      this.sessions = await DB.getSessions(this.user.uid, pid);
+      if (this.sessions.length > 0) await this.selectSession(this.sessions[0].id);
+    },
+
+    async addProgram() {
+      const { name, desc: description } = this.modalForm;
+      if (!name.trim()) return;
+      const p = await DB.addProgram(this.user.uid, { name: name.trim(), description: description ?? '' });
+      this.programs.push(p);
+      await this.selectProgram(p.id);
+      this.showToast('Program created');
+      this.closeModal();
+    },
+
+    async editProgram() {
+      const pid = this.modal.data;
+      const { name, desc: description } = this.modalForm;
+      if (!name.trim()) return;
+      await DB.updateProgram(this.user.uid, pid, { name: name.trim(), description: description ?? '' });
+      const p = this.programs.find(x => x.id === pid);
+      if (p) { p.name = name.trim(); p.description = description ?? ''; }
+      this.showToast('Program updated');
+      this.closeModal();
+    },
+
+    async deleteProgram() {
+      const pid = this.modal.data;
+      await DB.deleteProgram(this.user.uid, pid);
+      this.programs = this.programs.filter(x => x.id !== pid);
+      if (this.selectedProgramId === pid) {
+        this.selectedProgramId = null;
+        this.selectedSessionId = null;
+        this.sessions  = [];
+        this.exercises = [];
+        if (this.programs.length) await this.selectProgram(this.programs[0].id);
+      }
+      this.showToast('Program deleted');
+      this.closeModal();
+    },
+
+    // ─── SESSIONS ────────────────────────────────────────────
+    async selectSession(sid) {
+      this.selectedSessionId = sid;
+      this.exercises         = [];
+      this.expandedId        = null;
+      this.mergeSet          = [];
+      this.workoutDraft      = this._loadDraft(sid);
+      this.exercises = await DB.getSessionExercises(
+        this.user.uid, this.selectedProgramId, sid
+      );
+    },
+
+    async addSession() {
+      const { name } = this.modalForm;
+      if (!name.trim() || !this.selectedProgramId) return;
+      const order = this.sessions.length;
+      const s = await DB.addSession(this.user.uid, this.selectedProgramId, { name: name.trim(), order });
+      this.sessions.push(s);
+      await this.selectSession(s.id);
+      this.showToast('Workout day created');
+      this.closeModal();
+    },
+
+    async editSession() {
+      const sid = this.modal.data;
+      const { name } = this.modalForm;
+      if (!name.trim()) return;
+      await DB.updateSession(this.user.uid, this.selectedProgramId, sid, { name: name.trim() });
+      const s = this.sessions.find(x => x.id === sid);
+      if (s) s.name = name.trim();
+      this.showToast('Day updated');
+      this.closeModal();
+    },
+
+    async deleteSession() {
+      const sid = this.modal.data;
+      await DB.deleteSession(this.user.uid, this.selectedProgramId, sid);
+      this.sessions = this.sessions.filter(x => x.id !== sid);
+      if (this.selectedSessionId === sid) {
+        this.selectedSessionId = null;
+        this.exercises         = [];
+        if (this.sessions.length) await this.selectSession(this.sessions[0].id);
+      }
+      this.showToast('Day deleted');
+      this.closeModal();
+    },
+
+    // ─── EXERCISES ───────────────────────────────────────────
+    async addExerciseToSession(globalEx) {
+      if (!this.selectedSessionId) return;
+      const uid = this.user.uid, pid = this.selectedProgramId, sid = this.selectedSessionId;
+      // Prevent duplicates
+      if (this.exercises.some(e => e.globalId === globalEx.id)) {
+        this.showToast('Already in this session', 'error'); return;
+      }
+      const order = this.exercises.length + 1;
+      const data = {
+        globalId:      globalEx.id,
+        name:          globalEx.name,
+        videoLink:     globalEx.videoLink  ?? '',
+        muscleGroups:  globalEx.muscleGroups ?? [],
+        order,
+        supersetGroup: null,
+        sets:          [{ key: 'Set 1', reps: '10', rest: '01:30' }],
+        markers:       [],
+        setHistory:    {},
+      };
+      const saved = await DB.addSessionExercise(uid, pid, sid, data);
+      this.exercises.push(saved);
+      this.searchQuery = '';
+      this.searchOpen  = false;
+      this._scheduleSave();
+    },
+
+    async addCustomExercise() {
+      const { name, videoLink } = this.modalForm;
+      if (!name.trim()) return;
+      const muscleGroups = [...this.modalChips];
+      // Add to global library
+      const globalEx = await DB.addGlobalExercise({
+        name: name.trim(), videoLink: videoLink?.trim() ?? '',
+        muscleGroups, createdBy: this.user.uid,
+      });
+      this.globalExercises.push(globalEx);
+      // Add to session
+      await this.addExerciseToSession(globalEx);
+      this.showToast('Exercise added');
+      this.closeModal();
+    },
+
+    async removeExercise(eid) {
+      await DB.deleteSessionExercise(
+        this.user.uid, this.selectedProgramId, this.selectedSessionId, eid
+      );
+      this.exercises = this.exercises.filter(e => e.id !== eid);
+      this.mergeSet  = this.mergeSet.filter(x => x !== eid);
+    },
+
+    // ─── SETS CONFIG ─────────────────────────────────────────
+    async updateSetField(eid, setIdx, field, value) {
+      const ex = this.exercises.find(e => e.id === eid);
+      if (!ex) return;
+      ex.sets[setIdx][field] = value;
+      this._scheduleSave(ex);
+    },
+
+    async addSet(eid) {
+      const ex = this.exercises.find(e => e.id === eid);
+      if (!ex || ex.sets.length >= 10) return;
+      const last = ex.sets[ex.sets.length - 1];
+      ex.sets.push({ key: `Set ${ex.sets.length + 1}`, reps: last?.reps ?? '10', rest: last?.rest ?? '01:30' });
+      await this._saveExercise(ex);
+    },
+
+    async removeSet(eid, setIdx) {
+      const ex = this.exercises.find(e => e.id === eid);
+      if (!ex || ex.sets.length <= 1) return;
+      ex.sets.splice(setIdx, 1);
+      ex.sets.forEach((s, i) => { s.key = `Set ${i + 1}`; });
+      await this._saveExercise(ex);
+    },
+
+    // ─── MARKERS ─────────────────────────────────────────────
+    async updateMarker(eid, markerName, value) {
+      const ex = this.exercises.find(e => e.id === eid);
+      if (!ex) return;
+      setMarker(ex, markerName, value);
+      this._scheduleSave(ex);
+    },
+
+    getMarkerValue(eid, markerName) {
+      const ex = this.exercises.find(e => e.id === eid);
+      return ex ? getMarker(ex, markerName) : null;
+    },
+
+    // ─── SUPERSET ────────────────────────────────────────────
+    toggleMerge(eid) {
+      const idx = this.mergeSet.indexOf(eid);
+      if (idx >= 0) this.mergeSet.splice(idx, 1); else this.mergeSet.push(eid);
+    },
+
+    async mergeSuperset() {
+      if (this.mergeSet.length < 2) return;
+      const groupId = 'ss-' + generateId();
+      const ids = new Set(this.mergeSet);
+      const minOrder = Math.min(
+        ...this.exercises.filter(e => ids.has(e.id)).map(e => e.order)
+      );
+      let subOrder = 0.1;
+      for (const ex of [...this.exercises].sort((a, b) => a.order - b.order)) {
+        if (ids.has(ex.id)) {
+          ex.supersetGroup = groupId;
+          ex.order         = minOrder + subOrder;
+          subOrder        += 0.1;
+        }
+      }
+      this.mergeSet = [];
+      await this._batchSaveOrder();
+      this.showToast('Superset created');
+    },
+
+    async unmergeSuperset(groupId) {
+      const members = this.exercises.filter(e => e.supersetGroup === groupId);
+      let order = members.length ? Math.floor(members[0].order) : this.exercises.length;
+      for (const ex of members) {
+        ex.supersetGroup = null;
+        ex.order         = order++;
+      }
+      await this._batchSaveOrder();
+      this.showToast('Superset removed');
+    },
+
+    // ─── DRAG AND DROP (config mode) ─────────────────────────
+    onDragStart(idx) {
+      this.dragIdx = idx;
+    },
+    onDragOver(idx) {
+      if (this.dragIdx === null || this.dragIdx === idx) return;
+      // Reorder displayExercises and map back to flat exercises
+      const display = this.displayExercises;
+      const [moved]  = display.splice(this.dragIdx, 1);
+      display.splice(idx, 0, moved);
+      this.dragIdx = idx;
+      // Reassign orders
+      let order = 1;
+      for (const item of display) {
+        if (item.isSuperset) {
+          item.items.forEach((ex, i) => {
+            const flat = this.exercises.find(e => e.id === ex.id);
+            if (flat) flat.order = order + i * 0.1;
+          });
+          order++;
+        } else {
+          const flat = this.exercises.find(e => e.id === item.id);
+          if (flat) flat.order = order++;
+        }
+      }
+    },
+    async onDrop() {
+      this.dragIdx = null;
+      await this._batchSaveOrder();
+    },
+
+    // ─── WORKOUT MODE ────────────────────────────────────────
+    toggleExpand(eid) {
+      this.expandedId = this.expandedId === eid ? null : eid;
+    },
+
+    updateWeight(eid, setKey, value) {
+      if (!this.workoutDraft[eid]) this.workoutDraft[eid] = {};
+      if (!this.workoutDraft[eid][setKey]) this.workoutDraft[eid][setKey] = {};
+      this.workoutDraft[eid][setKey].weight = value;
+      this._persistDraft();
+    },
+
+    updateReps(eid, setKey, value) {
+      if (!this.workoutDraft[eid]) this.workoutDraft[eid] = {};
+      if (!this.workoutDraft[eid][setKey]) this.workoutDraft[eid][setKey] = {};
+      this.workoutDraft[eid][setKey].reps = value;
+      this._persistDraft();
+    },
+
+    getDraftSet(eid, setKey) {
+      return this.workoutDraft[eid]?.[setKey] ?? {};
+    },
+
+    getSetHistory(eid, setKey) {
+      const ex = this.exercises.find(e => e.id === eid);
+      return ex?.setHistory?.[setKey] ?? [];
+    },
+
+    /** Apply weight goals: for each exercise with LI marker, prefill last weight + LI. */
+    applyWeightGoals() {
+      for (const ex of this.exercises) {
+        const li = parseFloat(getMarker(ex, 'LI') ?? '0.25');
+        for (const set of ex.sets) {
+          const hist = ex.setHistory?.[set.key];
+          if (hist?.length) {
+            const lastW = hist[hist.length - 1].weight ?? 0;
+            if (!this.workoutDraft[ex.id]) this.workoutDraft[ex.id] = {};
+            if (!this.workoutDraft[ex.id][set.key]) this.workoutDraft[ex.id][set.key] = {};
+            this.workoutDraft[ex.id][set.key].weight = lastW + li;
+          }
+        }
+      }
+      this._persistDraft();
+      this.showToast('Goals applied!');
+      this.closeModal();
+    },
+
+    weightGoalRows() {
+      const rows = [];
+      for (const ex of this.exercises) {
+        const li = parseFloat(getMarker(ex, 'LI') ?? '0.25');
+        const setRows = [];
+        for (const set of ex.sets) {
+          const hist = ex.setHistory?.[set.key];
+          if (hist?.length) {
+            const lastW = hist[hist.length - 1].weight ?? 0;
+            setRows.push({ key: set.key, lastW, goal: lastW + li });
+          }
+        }
+        if (setRows.length) rows.push({ name: ex.name, li, sets: setRows });
+      }
+      return rows;
+    },
+
+    async finishWorkout() {
+      if (!this.selectedSessionId) return;
+      const today    = todayStr();
+      const logExercises = this.exercises.map(ex => ({
+        id:   ex.id,
+        name: ex.name,
+        sets: (ex.sets || []).map(s => ({
+          key:    s.key,
+          weight: this.workoutDraft[ex.id]?.[s.key]?.weight ?? null,
+          reps:   this.workoutDraft[ex.id]?.[s.key]?.reps   ?? null,
+        })).filter(s => s.weight != null || s.reps != null),
+      })).filter(e => e.sets.length > 0);
+
+      if (!logExercises.length) {
+        this.showToast('No data logged yet', 'error'); return;
+      }
+
+      // Save workout log
+      const log = await DB.addWorkoutLog(this.user.uid, {
+        programId:    this.selectedProgramId,
+        programName:  this.selectedProgram?.name ?? '',
+        sessionId:    this.selectedSessionId,
+        sessionName:  this.selectedSession?.name ?? '',
+        date:         today,
+        exercises:    logExercises,
+      });
+
+      // Update set history on each exercise doc (keep last 5)
+      const updatePromises = this.exercises.map(ex => {
+        const draftSets = this.workoutDraft[ex.id];
+        if (!draftSets) return Promise.resolve();
+        const updatedHistory = { ...(ex.setHistory ?? {}) };
+        for (const [setKey, vals] of Object.entries(draftSets)) {
+          if (vals.weight == null && vals.reps == null) continue;
+          const prev = updatedHistory[setKey] ?? [];
+          updatedHistory[setKey] = [
+            ...prev,
+            { weight: vals.weight ?? 0, reps: vals.reps ?? 0, date: today, logId: log.id },
+          ].slice(-5);
+        }
+        ex.setHistory = updatedHistory;
+        return DB.saveWorkoutDraftToExercise(
+          this.user.uid, this.selectedProgramId, this.selectedSessionId, ex.id, updatedHistory
+        );
+      });
+      await Promise.all(updatePromises);
+
+      // Push to local history list
+      if (this.historyLoaded) this.workoutLogs.unshift(log);
+
+      // Clear draft
+      this.workoutDraft = {};
+      this._clearDraft(this.selectedSessionId);
+
+      this.showToast('Workout saved!');
+      this.closeModal();
+    },
+
+    // ─── TIMERS ──────────────────────────────────────────────
+    startTimer(key, seconds) {
+      if (this.activeTimers[key]) {
+        clearInterval(this.activeTimers[key].intervalId);
+        const t = { ...this.activeTimers }; delete t[key];
+        this.activeTimers = t; return;
+      }
+      let remaining = seconds;
+      const intervalId = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+          clearInterval(this.activeTimers[key]?.intervalId);
+          const t = { ...this.activeTimers }; delete t[key];
+          this.activeTimers = t;
+          beep();
+          this.showToast('Rest done — next set!');
+          return;
+        }
+        this.activeTimers = { ...this.activeTimers, [key]: { remaining, intervalId: this.activeTimers[key].intervalId } };
+      }, 1000);
+      this.activeTimers = { ...this.activeTimers, [key]: { remaining, intervalId } };
+    },
+
+    timerDisplay(key) {
+      const t = this.activeTimers[key];
+      return t ? secondsToRest(t.remaining) : null;
+    },
+
+    // ─── MODALS ──────────────────────────────────────────────
+    openModal(type, data = null) {
+      this.modal     = { type, data };
+      this.modalForm = {};
+      this.modalChips = [];
+      if (type === 'editProgram') {
+        const p = this.programs.find(x => x.id === data);
+        if (p) { this.modalForm = { name: p.name, desc: p.description ?? '' }; }
+      }
+      if (type === 'editSession') {
+        const s = this.sessions.find(x => x.id === data);
+        if (s) { this.modalForm = { name: s.name }; }
+      }
+    },
+    closeModal() { this.modal = null; this.modalForm = {}; this.modalChips = []; },
+
+    toggleChip(muscle) {
+      const i = this.modalChips.indexOf(muscle);
+      if (i >= 0) this.modalChips.splice(i, 1); else this.modalChips.push(muscle);
+    },
+
+    // ─── TOASTS ──────────────────────────────────────────────
+    showToast(msg, type = 'success') {
+      const id = generateId();
+      this.toasts.push({ id, msg, type });
+      setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 2500);
+    },
+
+    // ─── SEARCH ──────────────────────────────────────────────
+    onSearch(q) {
+      this.searchQuery = q;
+      this.searchOpen  = q.length > 0 || true; // always open in config mode when focused
+    },
+    closeSearch() { this.searchOpen = false; this.searchQuery = ''; },
+
+    // ─── HISTORY HELPERS ─────────────────────────────────────
+    groupedLogs() {
+      const groups = new Map();
+      for (const log of this.workoutLogs) {
+        const month = getMonthYear(log.date);
+        if (!groups.has(month)) groups.set(month, []);
+        groups.get(month).push(log);
+      }
+      return [...groups.entries()].map(([month, logs]) => ({ month, logs }));
+    },
+
+    formatDate(d)    { return formatDate(d); },
+    relativeDate(d)  { return relativeDate(d); },
+    secondsToRest(s) { return secondsToRest(s); },
+    restToSeconds(s) { return restToSeconds(s); },
+
+    // ─── INTERNAL SAVE HELPERS ───────────────────────────────
+    _scheduleSave: null,   // set lazily below
+
+    async _saveExercise(ex) {
+      if (!this.selectedSessionId) return;
+      const { id, ...data } = ex;
+      await DB.updateSessionExercise(
+        this.user.uid, this.selectedProgramId, this.selectedSessionId, id, data
+      );
+    },
+
+    async _batchSaveOrder() {
+      this.saveStatus = 'saving';
+      await DB.batchReorderExercises(
+        this.user.uid, this.selectedProgramId, this.selectedSessionId,
+        this.exercises
+      );
+      this.saveStatus = 'saved';
+    },
+
+    // ─── DRAFT PERSISTENCE (localStorage) ────────────────────
+    _draftKey(sid) { return `gymbudy-draft-${sid}-${todayStr()}`; },
+    _loadDraft(sid) {
+      try { return JSON.parse(localStorage.getItem(this._draftKey(sid)) ?? 'null') ?? {}; }
+      catch (_) { return {}; }
+    },
+    _persistDraft: null,  // set lazily below
+    _clearDraft(sid) { localStorage.removeItem(this._draftKey(sid)); },
+  });
+
+  // Lazily wire debounced functions (cannot reference `this` inside literal)
+  const store = Alpine.store('gym');
+
+  store._scheduleSave = debounce(async (ex) => {
+    if (!store.selectedSessionId) return;
+    store.saveStatus = 'saving';
+    if (ex) {
+      const { id, ...data } = ex;
+      await DB.updateSessionExercise(
+        store.user.uid, store.selectedProgramId, store.selectedSessionId, id, data
+      );
+    }
+    store.saveStatus = 'saved';
+  }, 800);
+
+  store._persistDraft = debounce(() => {
+    if (!store.selectedSessionId) return;
+    localStorage.setItem(store._draftKey(store.selectedSessionId), JSON.stringify(store.workoutDraft));
+  }, 600);
+}
