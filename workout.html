@@ -1673,7 +1673,6 @@
                               >
                                 <div
                                   class="workout-card-header"
-                                  @click="$store.gym.toggleExpand('ss-'+item.supersetGroup)"
                                 >
                                   <div
                                     class="ex-num"
@@ -1702,15 +1701,21 @@
                                       x-text="item.items.map(e=>e.name).join(' · ')"
                                     ></div>
                                   </div>
-                                  <svg
-                                    :style="'width:18px;height:18px;transition:transform .2s;flex-shrink:0;' + ($store.gym.expandedId==='ss-'+item.supersetGroup ? 'transform:rotate(180deg)' : '')"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
+                                  <button
+                                    class="btn-icon"
+                                    @click.stop="$store.gym.toggleExpand('ss-'+item.supersetGroup)"
+                                    style="flex-shrink:0;width:28px;height:28px"
                                   >
-                                    <path d="M6 9l6 6 6-6" />
-                                  </svg>
+                                    <svg
+                                      :style="'width:18px;height:18px;transition:transform .2s;' + ($store.gym.expandedId==='ss-'+item.supersetGroup ? 'transform:rotate(180deg)' : '')"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                    >
+                                      <path d="M6 9l6 6 6-6" />
+                                    </svg>
+                                  </button>
                                 </div>
                                 <div
                                   x-show="$store.gym.expandedId==='ss-'+item.supersetGroup"
@@ -1894,7 +1899,6 @@
                               >
                                   <div
                                   class="workout-card-header"
-                                  @click="$store.gym.toggleExpand(item.id)"
                                 >
                                   <div class="ex-num" x-text="idx+1"></div>
                                   <div style="flex: 1; min-width: 0">
@@ -1984,15 +1988,21 @@
                                       </div>
                                     </template>
                                   </div>
-                                  <svg
-                                    :style="'width:18px;height:18px;transition:transform .2s;flex-shrink:0;' + ($store.gym.expandedId===item.id ? 'transform:rotate(180deg)' : '')"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
+                                  <button
+                                    class="btn-icon"
+                                    @click.stop="$store.gym.toggleExpand(item.id)"
+                                    style="flex-shrink:0;width:28px;height:28px"
                                   >
-                                    <path d="M6 9l6 6 6-6" />
-                                  </svg>
+                                    <svg
+                                      :style="'width:18px;height:18px;transition:transform .2s;' + ($store.gym.expandedId===item.id ? 'transform:rotate(180deg)' : '')"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                    >
+                                      <path d="M6 9l6 6 6-6" />
+                                    </svg>
+                                  </button>
                                 </div>
                                 <div
                                   x-show="$store.gym.expandedId === item.id"

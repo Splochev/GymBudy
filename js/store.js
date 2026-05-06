@@ -589,7 +589,8 @@ export function registerStore(Alpine) {
       const draft = this.workoutDraft[eid]?.[setKey] ?? {};
       const hasWeight = draft.weight !== undefined && draft.weight !== null && draft.weight !== "";
       const hasReps = draft.reps !== undefined && draft.reps !== null && draft.reps !== "";
-      if (hasWeight && hasReps) return draft;
+      // Once the user has entered either field, use only the draft to avoid mixing
+      if (hasWeight || hasReps) return draft;
 
       const ex = this.exercises.find((e) => e.id === eid);
       const hist = ex?.setHistory?.[setKey] ?? [];
@@ -604,9 +605,8 @@ export function registerStore(Alpine) {
       if (!todayEntry) return draft;
 
       return {
-        ...draft,
-        weight: hasWeight ? draft.weight : (todayEntry.weight ?? ""),
-        reps: hasReps ? draft.reps : (todayEntry.reps ?? ""),
+        weight: todayEntry.weight ?? "",
+        reps: todayEntry.reps ?? "",
       };
     },
 
@@ -741,8 +741,8 @@ export function registerStore(Alpine) {
           const prev = updatedHistory[setKey] ?? [];
           const todayIdx = prev.findIndex((entry) => entry.date === today);
           const todayEntry = {
-            weight: weight ?? 0,
-            reps: reps ?? 0,
+            weight: weight,
+            reps: reps,
             date: today,
             logId: log.id,
           };
