@@ -585,29 +585,28 @@ export function registerStore(Alpine) {
       this._autosaveWorkoutDebounced();
     },
 
-    getDraftSet(eid, setKey) {
-      const draft = this.workoutDraft[eid]?.[setKey] ?? {};
-      const hasWeight = draft.weight !== undefined && draft.weight !== null && draft.weight !== "";
-      const hasReps = draft.reps !== undefined && draft.reps !== null && draft.reps !== "";
-      // Once the user has entered either field, use only the draft to avoid mixing
-      if (hasWeight || hasReps) return draft;
-
-      const ex = this.exercises.find((e) => e.id === eid);
-      const hist = ex?.setHistory?.[setKey] ?? [];
+    _getTodayEntry(hist) {
       const today = todayStr();
-      let todayEntry = null;
       for (let i = hist.length - 1; i >= 0; i--) {
-        if (hist[i]?.date === today) {
-          todayEntry = hist[i];
-          break;
-        }
+        if (hist[i]?.date === today) return hist[i];
       }
-      if (!todayEntry) return draft;
+      return null;
+    },
 
-      return {
-        weight: todayEntry.weight ?? "",
-        reps: todayEntry.reps ?? "",
-      };
+    getDraftWeight(eid, setKey) {
+      const w = this.workoutDraft[eid]?.[setKey]?.weight;
+      if (w !== undefined && w !== null && w !== "") return w;
+      const ex = this.exercises.find((e) => e.id === eid);
+      const entry = this._getTodayEntry(ex?.setHistory?.[setKey] ?? []);
+      return entry?.weight ?? "";
+    },
+
+    getDraftReps(eid, setKey) {
+      const r = this.workoutDraft[eid]?.[setKey]?.reps;
+      if (r !== undefined && r !== null && r !== "") return r;
+      const ex = this.exercises.find((e) => e.id === eid);
+      const entry = this._getTodayEntry(ex?.setHistory?.[setKey] ?? []);
+      return entry?.reps ?? "";
     },
 
     getSetHistory(eid, setKey) {
