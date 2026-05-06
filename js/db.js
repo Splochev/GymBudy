@@ -63,10 +63,14 @@ function cacheBust(...keys) {
   for (const k of keys) localStorage.removeItem("gymbudy:" + k);
 }
 // ─── GLOBAL EXERCISES ─────────────────────────────────────────
+const GLOBAL_EXERCISES_LIMIT = 20;
+
 export async function getGlobalExercises() {
   const cached = cacheGet("exercises");
   if (cached) return cached;
-  const snap = await getDocs(query(col("exercises"), orderBy("name")));
+  const snap = await getDocs(
+    query(col("exercises"), orderBy("name"), limit(GLOBAL_EXERCISES_LIMIT)),
+  );
   const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   cacheSet("exercises", data, DAY);
   return data;

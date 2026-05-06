@@ -2695,6 +2695,12 @@
                         x-text="'LI '+goalRow.li+'kg'"
                         style="font-size: 0.65rem"
                       ></span>
+                      <span
+                        class="badge"
+                        :class="goalRow.status==='progress' ? 'badge-accent' : goalRow.status==='deload' ? 'badge-danger' : ''"
+                        x-text="goalRow.status==='progress' ? '\u2191 +'+goalRow.li+'kg' : goalRow.status==='deload' ? '\u2193 \u2212'+(goalRow.li*2)+'kg' : '= hold'"
+                        style="font-size: 0.65rem"
+                      ></span>
                     </div>
                     <template
                       x-for="goalSet in goalRow.sets"
@@ -2720,7 +2726,7 @@
                         ></span>
                         <span style="color: var(--text3)">→</span>
                         <span
-                          style="color: var(--accent); font-weight: 600"
+                          :style="'font-weight:600;color:'+(goalRow.status==='deload'?'var(--danger)':goalRow.status==='hold'?'var(--text2)':'var(--accent)')"
                           x-text="goalSet.goal+'kg'"
                         ></span>
                       </div>

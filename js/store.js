@@ -62,6 +62,50 @@ function flatExercises(list) {
   return out;
 }
 
+/**
+ * Returns the last `count` unique workout dates from an exercise's setHistory,
+ * newest first, excluding today.
+ */
+function getLastWorkoutDates(ex, count = 2) {
+  const today = todayStr();
+  const dates = new Set();
+  for (const entries of Object.values(ex.setHistory ?? {})) {
+    for (const e of entries ?? []) {
+      if (e?.date && e.date !== today) dates.add(e.date);
+    }
+  }
+  return [...dates].sort().reverse().slice(0, count);
+}
+
+/**
+ * Check whether the periodization success criteria was met for a given date.
+ *
+ * Linear    – first set must hit target; all other sets ≥ target − 2.
+ * Set Range – first 2 sets must hit target; all other sets ≥ target − 2.
+ *
+ * Returns true (met), false (failed), or null (no data for that date).
+ */
+function criteriaMet(ex, date) {
+  const periodization = getMarker(ex, "Periodization") ?? "Linear";
+  const firstRequired = periodization === "Set Range" ? 2 : 1;
+  let hasData = false;
+  for (let i = 0; i < ex.sets.length; i++) {
+    const set = ex.sets[i];
+    const hist = ex.setHistory?.[set.key] ?? [];
+    const entry = hist.find((e) => e?.date === date);
+    if (!entry) continue;
+    hasData = true;
+    const target = parseInt(set.reps, 10) || 0;
+    const actual = entry.reps ?? 0;
+    if (i < firstRequired) {
+      if (actual < target) return false;
+    } else {
+      if (actual < target - 2) return false;
+    }
+  }
+  return hasData ? true : null;
+}
+
 export function registerStore(Alpine) {
   Alpine.store("gym", {
     // ── Auth ─────────────────────────────────────────────────
@@ -573,30 +617,32 @@ export function registerStore(Alpine) {
       return hist.filter((h) => h?.date !== today);
     },
 
-    /** Apply weight goals: for each exercise with LI marker, prefill last weight + LI. */
+    /** Apply weight goals: prefill each exercise's draft weight based on periodization criteria. */
     applyWeightGoals() {
       for (const ex of this.exercises) {
-        const li = parseFloat(getMarker(ex, "LI") ?? "0.25");
-        for (const set of ex.sets) {
-          const hist = ex.setHistory?.[set.key];
-          if (hist?.length) {
-            const today = todayStr();
-            let lastEntry = null;
-            for (let i = hist.length - 1; i >= 0; i--) {
-              if (hist[i]?.date !== today) {
-                lastEntry = hist[i];
-                break;
-              }
-            }
-            if (!lastEntry) continue;
+        const li = parseFloat(getMarker(ex, "LI") ?? "0");
+        if (!li) continue;
+        const dates = getLastWorkoutDates(ex, 2);
+        if (!dates.length) continue;
 
-            const lastW = Number.parseFloat(lastEntry.weight ?? 0) || 0;
-            const goal = Math.round((lastW + li) * 100) / 100;
-            if (!this.workoutDraft[ex.id]) this.workoutDraft[ex.id] = {};
-            if (!this.workoutDraft[ex.id][set.key])
-              this.workoutDraft[ex.id][set.key] = {};
-            this.workoutDraft[ex.id][set.key].weight = goal;
-          }
+        const lastMet = criteriaMet(ex, dates[0]);
+        const prevMet = dates[1] ? criteriaMet(ex, dates[1]) : null;
+
+        // Two consecutive failures (or drastic drop counted as failure) → deload
+        let delta;
+        if (lastMet === false && prevMet === false) delta = -(li * 2);
+        else if (lastMet === true) delta = li;
+        else delta = 0;
+
+        for (const set of ex.sets) {
+          const hist = ex.setHistory?.[set.key] ?? [];
+          const lastEntry = hist.find((e) => e?.date === dates[0]);
+          if (!lastEntry) continue;
+          const lastW = parseFloat(lastEntry.weight ?? 0) || 0;
+          const goal = Math.round((lastW + delta) * 100) / 100;
+          if (!this.workoutDraft[ex.id]) this.workoutDraft[ex.id] = {};
+          if (!this.workoutDraft[ex.id][set.key]) this.workoutDraft[ex.id][set.key] = {};
+          this.workoutDraft[ex.id][set.key].weight = goal;
         }
       }
       this._persistDraft();
@@ -607,27 +653,36 @@ export function registerStore(Alpine) {
     weightGoalRows() {
       const rows = [];
       for (const ex of this.exercises) {
-        const li = parseFloat(getMarker(ex, "LI") ?? "0.25");
+        const li = parseFloat(getMarker(ex, "LI") ?? "0");
+        if (!li) continue;
+        const dates = getLastWorkoutDates(ex, 2);
+        if (!dates.length) continue;
+
+        const lastMet = criteriaMet(ex, dates[0]);
+        const prevMet = dates[1] ? criteriaMet(ex, dates[1]) : null;
+
+        let delta, status;
+        if (lastMet === false && prevMet === false) {
+          delta = -(li * 2);
+          status = "deload";
+        } else if (lastMet === true) {
+          delta = li;
+          status = "progress";
+        } else {
+          delta = 0;
+          status = "hold";
+        }
+
         const setRows = [];
         for (const set of ex.sets) {
-          const hist = ex.setHistory?.[set.key];
-          if (hist?.length) {
-            const today = todayStr();
-            let lastEntry = null;
-            for (let i = hist.length - 1; i >= 0; i--) {
-              if (hist[i]?.date !== today) {
-                lastEntry = hist[i];
-                break;
-              }
-            }
-            if (!lastEntry) continue;
-
-            const lastW = Number.parseFloat(lastEntry.weight ?? 0) || 0;
-            const goal = Math.round((lastW + li) * 100) / 100;
-            setRows.push({ key: set.key, lastW, goal });
-          }
+          const hist = ex.setHistory?.[set.key] ?? [];
+          const lastEntry = hist.find((e) => e?.date === dates[0]);
+          if (!lastEntry) continue;
+          const lastW = parseFloat(lastEntry.weight ?? 0) || 0;
+          const goal = Math.round((lastW + delta) * 100) / 100;
+          setRows.push({ key: set.key, lastW, goal });
         }
-        if (setRows.length) rows.push({ name: ex.name, li, sets: setRows });
+        if (setRows.length) rows.push({ name: ex.name, li, status, delta, sets: setRows });
       }
       return rows;
     },
@@ -810,9 +865,10 @@ export function registerStore(Alpine) {
     },
 
     // ─── SEARCH ──────────────────────────────────────────────
+    _searchDebounced: null, // set lazily below
     onSearch(q) {
-      this.searchQuery = q;
       this.searchOpen = q.length > 0 || true; // always open in config mode when focused
+      this._searchDebounced(q);
     },
     closeSearch() {
       this.searchOpen = false;
@@ -936,4 +992,8 @@ export function registerStore(Alpine) {
       store.saveStatus = "saved";
     }
   }, 1000);
+
+  store._searchDebounced = debounce((q) => {
+    store.searchQuery = q;
+  }, 500);
 }
