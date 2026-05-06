@@ -1664,7 +1664,7 @@
                             <!-- SUPERSET WORKOUT CARD -->
                             <template x-if="item.isSuperset">
                               <div
-                                x-data="{ activeEx: item.items[0] }"
+                                x-data="{ activeEx: item.items[0], expanded: false }"
                                 class="workout-card"
                                 style="
                                   border-color: var(--accent);
@@ -1703,11 +1703,11 @@
                                   </div>
                                   <button
                                     class="btn-icon"
-                                    @click.stop="$store.gym.toggleExpand('ss-'+item.supersetGroup)"
+                                    @click.stop="expanded = !expanded"
                                     style="flex-shrink:0;width:28px;height:28px"
                                   >
                                     <svg
-                                      :style="'width:18px;height:18px;transition:transform .2s;' + ($store.gym.expandedId==='ss-'+item.supersetGroup ? 'transform:rotate(180deg)' : '')"
+                                      :style="'width:18px;height:18px;transition:transform .2s;' + (expanded ? 'transform:rotate(180deg)' : '')"
                                       viewBox="0 0 24 24"
                                       fill="none"
                                       stroke="currentColor"
@@ -1718,7 +1718,7 @@
                                   </button>
                                 </div>
                                 <div
-                                  x-show="$store.gym.expandedId==='ss-'+item.supersetGroup"
+                                  x-show="expanded"
                                   style="
                                     border-top: 1px solid var(--border);
                                     padding: 0 16px 16px;
@@ -1894,6 +1894,7 @@
                             <!-- STANDALONE WORKOUT CARD -->
                             <template x-if="!item.isSuperset">
                               <div
+                                x-data="{ expanded: false }"
                                 class="workout-card"
                                 style="margin-bottom: 10px"
                               >
@@ -1990,11 +1991,11 @@
                                   </div>
                                   <button
                                     class="btn-icon"
-                                    @click.stop="$store.gym.toggleExpand(item.id)"
+                                    @click.stop="expanded = !expanded"
                                     style="flex-shrink:0;width:28px;height:28px"
                                   >
                                     <svg
-                                      :style="'width:18px;height:18px;transition:transform .2s;' + ($store.gym.expandedId===item.id ? 'transform:rotate(180deg)' : '')"
+                                      :style="'width:18px;height:18px;transition:transform .2s;' + (expanded ? 'transform:rotate(180deg)' : '')"
                                       viewBox="0 0 24 24"
                                       fill="none"
                                       stroke="currentColor"
@@ -2005,7 +2006,7 @@
                                   </button>
                                 </div>
                                 <div
-                                  x-show="$store.gym.expandedId === item.id"
+                                  x-show="expanded"
                                   style="
                                     border-top: 1px solid var(--border);
                                     padding: 0 16px 16px;
