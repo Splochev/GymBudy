@@ -568,18 +568,26 @@ export function registerStore(Alpine) {
     },
 
     updateWeight(eid, setKey, value) {
-      if (!this.workoutDraft[eid]) this.workoutDraft[eid] = {};
-      if (!this.workoutDraft[eid][setKey]) this.workoutDraft[eid][setKey] = {};
-      this.workoutDraft[eid][setKey].weight = value;
+      this.workoutDraft = {
+        ...this.workoutDraft,
+        [eid]: {
+          ...(this.workoutDraft[eid] ?? {}),
+          [setKey]: { ...(this.workoutDraft[eid]?.[setKey] ?? {}), weight: value },
+        },
+      };
       this.saveStatus = "saving";
       this._persistDraft();
       this._autosaveWorkoutDebounced();
     },
 
     updateReps(eid, setKey, value) {
-      if (!this.workoutDraft[eid]) this.workoutDraft[eid] = {};
-      if (!this.workoutDraft[eid][setKey]) this.workoutDraft[eid][setKey] = {};
-      this.workoutDraft[eid][setKey].reps = value;
+      this.workoutDraft = {
+        ...this.workoutDraft,
+        [eid]: {
+          ...(this.workoutDraft[eid] ?? {}),
+          [setKey]: { ...(this.workoutDraft[eid]?.[setKey] ?? {}), reps: value },
+        },
+      };
       this.saveStatus = "saving";
       this._persistDraft();
       this._autosaveWorkoutDebounced();
