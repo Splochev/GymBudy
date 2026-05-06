@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DietBudy – Meal Planner</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="stylesheet" href="./css/app.css" />
+    <style>
+      .tab-btn {
+        padding: 7px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text3);
+        transition: var(--trans);
+        cursor: pointer;
+      }
+      .tab-btn.active {
+        background: var(--accent-bg);
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .tab-btn:hover:not(.active) {
+        background: var(--surface2);
+        color: var(--text);
+      }
+      .meal-item-grid {
+        display: grid;
+        grid-template-columns: 1fr 100px 70px 75px 75px 70px 32px;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.875rem;
+      }
+      .meal-item-grid:last-child { border-bottom: none; }
+      .meal-item-grid input {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        width: 100%;
+        text-align: center;
+      }
+      @media (max-width: 768px) {
+        .meal-item-grid {
+          grid-template-columns: 1fr 80px 60px 60px 32px;
+        }
+        .col-fats, .col-cost { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div x-data x-init="$store.planner.init()" style="display:flex;flex-direction:column;height:100vh">
+
+      <!-- ══ AUTH SCREEN ══════════════════════════════════════════ -->
+      <template x-if="$store.planner.authState === 'unauthenticated'">
+        <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:var(--bg)">
+          <div style="width:100%;max-width:480px">
+            <div class="auth-card">
+              <div class="auth-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2a9 9 0 0 1 9 9c0 4.17-2.84 7.67-6.7 8.67L12 22l-2.3-2.33C5.84 18.67 3 15.17 3 11A9 9 0 0 1 12 2z"/>
+                  <circle cx="12" cy="11" r="3"/>
+                </svg>
+                <span>DietBudy</span>
+              </div>
+              <div x-show="$store.planner.authError" class="error-box" x-text="$store.planner.authError"></div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" x-model="$store.planner.authEmail" @keyup.enter="$store.planner.login()" placeholder="you@example.com" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" x-model="$store.planner.authPassword" @keyup.enter="$store.planner.login()" placeholder="••••••••" />
+              </div>
+              <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px 16px"
+                @click="$store.planner.login()" :disabled="$store.planner.authLoading">
+                <span x-show="!$store.planner.authLoading">Sign In</span>
+                <span x-show="$store.planner.authLoading">Signing in…</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- ══ LOADING ══════════════════════════════════════════════ -->
+      <template x-if="$store.planner.authState === 'loading'">
+        <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg)">
+          <div style="text-align:center;color:var(--text3)">
+            <svg style="width:40px;height:40px;color:var(--accent);animation:pulse 1.5s infinite;margin-bottom:12px"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2a9 9 0 0 1 9 9c0 4.17-2.84 7.67-6.7 8.67L12 22l-2.3-2.33C5.84 18.67 3 15.17 3 11A9 9 0 0 1 12 2z"/>
+              <circle cx="12" cy="11" r="3"/>
+            </svg>
+            <p style="font-size:0.9rem">Loading…</p>
+          </div>
+        </div>
+      </template>
+
+      <!-- ══ APP SHELL ═════════════════════════════════════════════ -->
+      <template x-if="$store.planner.authState === 'authenticated'">
+        <div style="display:flex;flex-direction:column;height:100vh">
+
+          <!-- ═ TOP BAR ═══════════════════════════════════════════ -->
+          <header style="display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
+            <button class="btn-icon" @click="$store.planner.sidebarOpen = !$store.planner.sidebarOpen" title="Toggle sidebar">
+              <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
+
+            <div style="display:flex;align-items:center;gap:8px;font-size:1.15rem;font-weight:700;color:var(--accent);letter-spacing:-0.5px;flex-shrink:0">
+              <svg style="width:24px;height:24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a9 9 0 0 1 9 9c0 4.17-2.84 7.67-6.7 8.67L12 22l-2.3-2.33C5.84 18.67 3 15.17 3 11A9 9 0 0 1 12 2z"/>
+                <circle cx="12" cy="11" r="3"/>
+              </svg>
+              DietBudy
+            </div>
+
+            <nav style="display:flex;gap:4px;margin-left:8px">
+              <a href="./index.html"
+                style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:4px;font-size:0.8rem;font-weight:500;color:var(--text3);text-decoration:none;transition:var(--trans)"
+                onmouseover="this.style.color='var(--text)';this.style.background='var(--surface2)'"
+                onmouseout="this.style.color='var(--text3)';this.style.background='transparent'">
+                <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2a9 9 0 0 1 9 9c0 4.17-2.84 7.67-6.7 8.67L12 22l-2.3-2.33C5.84 18.67 3 15.17 3 11A9 9 0 0 1 12 2z"/>
+                  <circle cx="12" cy="11" r="3"/>
+                </svg>
+                Foods
+              </a>
+              <a href="./planner.html"
+                style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:4px;font-size:0.8rem;font-weight:500;color:var(--accent);background:var(--accent-bg);text-decoration:none">
+                <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                  <line x1="8" y1="14" x2="16" y2="14"/>
+                </svg>
+                Planner
+              </a>
+              <a href="../workout.html"
+                style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:4px;font-size:0.8rem;font-weight:500;color:var(--text3);text-decoration:none;transition:var(--trans)"
+                onmouseover="this.style.color='var(--text)';this.style.background='var(--surface2)'"
+                onmouseout="this.style.color='var(--text3)';this.style.background='transparent'">
+                <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="9" width="3" height="6" rx="1"/>
+                  <rect x="19" y="9" width="3" height="6" rx="1"/>
+                  <rect x="5" y="7" width="3" height="10" rx="1"/>
+                  <rect x="16" y="7" width="3" height="10" rx="1"/>
+                  <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+                Workouts
+              </a>
+            </nav>
+
+            <div style="flex:1"></div>
+
+            <!-- Save status -->
+            <div x-show="$store.planner.activePlan" style="display:flex;align-items:center;gap:8px">
+              <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text3)">
+                <div :class="$store.planner.saving ? 'dot-saving' : 'dot-saved'" class="save-dot"></div>
+                <span x-text="$store.planner.saving ? 'Saving…' : 'Saved'"></span>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:0.8rem;color:var(--text3)" x-text="$store.planner.user?.displayName || $store.planner.user?.email?.split('@')[0]"></span>
+              <button class="btn-icon" @click="$store.planner.logout()" title="Sign out">
+                <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+              </button>
+            </div>
+          </header>
+
+          <!-- ═ BODY ════════════════════════════════════════════════ -->
+          <div style="display:flex;flex:1;overflow:hidden;position:relative">
+
+            <!-- Mobile overlay -->
+            <div class="sidebar-mobile-overlay"
+              x-show="$store.planner.sidebarOpen"
+              @click="$store.planner.sidebarOpen = false"
+              style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:40">
+            </div>
+
+            <!-- ═ SIDEBAR ════════════════════════════════════════ -->
+            <aside :class="{ open: $store.planner.sidebarOpen }"
+              style="background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0"
+              :style="$store.planner.sidebarOpen ? 'width:240px' : 'width:0;border:none'">
+
+              <!-- Mobile header -->
+              <div class="sidebar-mobile-header" style="display:none;flex-direction:column;flex-shrink:0">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)">
+                  <div style="display:flex;align-items:center;gap:8px;font-size:1.1rem;font-weight:700;color:var(--accent)">
+                    <svg style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a9 9 0 0 1 9 9c0 4.17-2.84 7.67-6.7 8.67L12 22l-2.3-2.33C5.84 18.67 3 15.17 3 11A9 9 0 0 1 12 2z"/><circle cx="12" cy="11" r="3"/></svg>
+                    DietBudy
+                  </div>
+                  <button class="btn-icon" @click="$store.planner.sidebarOpen = false">
+                    <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+                <div style="display:flex;flex-direction:column;padding:8px;border-bottom:1px solid var(--border);gap:2px">
+                  <a href="./index.html" style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--radius);color:var(--text3);font-size:0.875rem;text-decoration:none">Foods</a>
+                  <a href="./planner.html" style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--radius);background:var(--accent-bg);color:var(--accent);font-size:0.875rem;font-weight:600;text-decoration:none">Planner</a>
+                  <a href="../workout.html" style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--radius);color:var(--text3);font-size:0.875rem;text-decoration:none">Workouts</a>
+                </div>
+              </div>
+
+              <!-- Meal Plans list -->
+              <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-weight:600">Meal Plans</span>
+                  <button class="btn-icon" style="width:24px;height:24px" title="New plan" @click="$store.planner.newPlan()">
+                    <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                  </button>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <template x-for="plan in $store.planner.mealPlans" :key="plan.id">
+                    <div class="sidebar-item" :class="{ active: $store.planner.activePlanId === plan.id }"
+                      @click="$store.planner.loadPlan(plan.id)">
+                      <span x-text="plan.name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.85rem"></span>
+                      <div class="item-actions">
+                        <button class="btn-icon" style="width:22px;height:22px;color:var(--danger)" title="Delete plan"
+                          @click.stop="$store.planner.openModal('deletePlan', plan.id)">
+                          <svg style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </template>
+                  <div x-show="!$store.planner.mealPlans.length" style="font-size:0.8rem;color:var(--text3);padding:8px 12px">No plans yet</div>
+                </div>
+              </div>
+
+              <!-- Daily summary (if plan loaded) -->
+              <div x-show="$store.planner.activePlan" style="padding:12px 16px;flex:1;overflow-y:auto">
+                <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-weight:600;margin-bottom:10px">Daily Summary</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <!-- Calories -->
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:3px">
+                      <span style="color:var(--text3)">Calories</span>
+                      <span :class="$store.planner.calorieClass" style="font-weight:600">
+                        <span x-text="$store.planner.dailyTotals.calories"></span>
+                        <span style="color:var(--text3)" x-show="$store.planner.activePlan?.targetCalories">
+                          / <span x-text="$store.planner.activePlan?.targetCalories"></span>
+                        </span>
+                      </span>
+                    </div>
+                    <div class="progress-bar" x-show="$store.planner.activePlan?.targetCalories">
+                      <div class="progress-fill" :class="$store.planner.calorieClass"
+                        :style="'width:' + Math.min(($store.planner.dailyTotals.calories / ($store.planner.activePlan?.targetCalories || 1)) * 100, 100) + '%'"></div>
+                    </div>
+                  </div>
+                  <!-- Protein -->
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:3px">
+                      <span style="color:var(--text3)">Protein</span>
+                      <span :class="$store.planner.proteinClass" style="font-weight:600">
+                        <span x-text="$store.planner.dailyTotals.protein + 'g'"></span>
+                        <span style="color:var(--text3)" x-show="$store.planner.activePlan?.targetProtein">
+                          / <span x-text="$store.planner.activePlan?.targetProtein + 'g'"></span>
+                        </span>
+                      </span>
+                    </div>
+                    <div class="progress-bar" x-show="$store.planner.activePlan?.targetProtein">
+                      <div class="progress-fill" :class="$store.planner.proteinClass"
+                        :style="'width:' + Math.min(($store.planner.dailyTotals.protein / ($store.planner.activePlan?.targetProtein || 1)) * 100, 100) + '%'"></div>
+                    </div>
+                  </div>
+                  <!-- Cost -->
+                  <div style="display:flex;justify-content:space-between;font-size:0.8rem">
+                    <span style="color:var(--text3)">Daily Cost</span>
+                    <span style="font-weight:600;color:var(--text2)" x-text="$store.planner.dailyTotals.cost ? $store.planner.dailyTotals.cost.toFixed(2) + ' lv' : '—'"></span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.8rem">
+                    <span style="color:var(--text3)">Fats</span>
+                    <span style="color:var(--text2)" x-text="$store.planner.dailyTotals.fats ? $store.planner.dailyTotals.fats + 'g' : '—'"></span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.8rem">
+                    <span style="color:var(--text3)">Carbs</span>
+                    <span style="color:var(--text2)" x-text="$store.planner.dailyTotals.carbs ? $store.planner.dailyTotals.carbs + 'g' : '—'"></span>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            <!-- ═ MAIN CONTENT ════════════════════════════════════ -->
+            <main style="flex:1;overflow:auto">
+
+              <!-- Empty state: no plan selected -->
+              <template x-if="!$store.planner.activePlan">
+                <div class="empty-state" style="height:100%">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <p style="font-size:1rem;font-weight:600;margin-bottom:6px">No meal plan selected</p>
+                  <p style="font-size:0.85rem;margin-bottom:20px">Create a new plan or select one from the sidebar</p>
+                  <button class="btn btn-primary" @click="$store.planner.newPlan()">
+                    <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    New Meal Plan
+                  </button>
+                </div>
+              </template>
+
+              <!-- Active plan editor -->
+              <template x-if="$store.planner.activePlan">
+                <div style="padding:20px;max-width:1000px">
+
+                  <!-- Plan header / settings -->
+                  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                      <div style="flex:1;min-width:200px">
+                        <label class="form-label">Plan Name</label>
+                        <input x-model="$store.planner.activePlan.name" @input="$store.planner.debouncedSave()"
+                          style="font-size:1rem;font-weight:600;background:transparent;border:1px solid transparent;padding:4px 8px;width:100%"
+                          placeholder="My Meal Plan" />
+                      </div>
+                      <div style="display:flex;gap:10px;flex-wrap:wrap">
+                        <div style="min-width:110px">
+                          <label class="form-label">Target Calories</label>
+                          <input type="number" x-model.number="$store.planner.activePlan.targetCalories"
+                            @input="$store.planner.debouncedSave()" placeholder="2000" min="0" style="width:100%" />
+                        </div>
+                        <div style="min-width:110px">
+                          <label class="form-label">Target Protein (g)</label>
+                          <input type="number" x-model.number="$store.planner.activePlan.targetProtein"
+                            @input="$store.planner.debouncedSave()" placeholder="150" min="0" style="width:100%" />
+                        </div>
+                        <div style="min-width:80px">
+                          <label class="form-label">Days</label>
+                          <input type="number" x-model.number="$store.planner.activePlan.days"
+                            @input="$store.planner.debouncedSave()" placeholder="5" min="1" max="365" style="width:100%" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Tabs: Meals | Shopping List | Cost Overview -->
+                  <div style="display:flex;gap:4px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px;width:fit-content">
+                    <button class="tab-btn" :class="{ active: $store.planner.tab === 'meals' }" @click="$store.planner.tab = 'meals'">
+                      🍽️ Meals
+                    </button>
+                    <button class="tab-btn" :class="{ active: $store.planner.tab === 'shopping' }" @click="$store.planner.tab = 'shopping'">
+                      🛒 Shopping List
+                    </button>
+                    <button class="tab-btn" :class="{ active: $store.planner.tab === 'costs' }" @click="$store.planner.tab = 'costs'">
+                      💰 Cost Overview
+                    </button>
+                  </div>
+
+                  <!-- ── TAB: MEALS ───────────────────────────────── -->
+                  <template x-if="$store.planner.tab === 'meals'">
+                    <div>
+                      <!-- Daily stats bar -->
+                      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+                        <div class="stat-chip" :class="$store.planner.calorieClass">
+                          <span class="stat-val" x-text="$store.planner.dailyTotals.calories"></span>
+                          <span class="stat-label">
+                            kcal / day
+                            <template x-if="$store.planner.activePlan.targetCalories">
+                              <span x-text="' (target: ' + $store.planner.activePlan.targetCalories + ')'"></span>
+                            </template>
+                          </span>
+                        </div>
+                        <div class="stat-chip" :class="$store.planner.proteinClass">
+                          <span class="stat-val" x-text="$store.planner.dailyTotals.protein + 'g'"></span>
+                          <span class="stat-label">
+                            protein / day
+                            <template x-if="$store.planner.activePlan.targetProtein">
+                              <span x-text="' (target: ' + $store.planner.activePlan.targetProtein + 'g)'"></span>
+                            </template>
+                          </span>
+                        </div>
+                        <div class="stat-chip">
+                          <span class="stat-val" x-text="$store.planner.dailyTotals.fats + 'g'"></span>
+                          <span class="stat-label">fats / day</span>
+                        </div>
+                        <div class="stat-chip">
+                          <span class="stat-val" x-text="$store.planner.dailyTotals.carbs + 'g'"></span>
+                          <span class="stat-label">carbs / day</span>
+                        </div>
+                        <div class="stat-chip" x-show="$store.planner.dailyTotals.cost > 0">
+                          <span class="stat-val" x-text="$store.planner.dailyTotals.cost.toFixed(2) + ' lv'"></span>
+                          <span class="stat-label">cost / day</span>
+                        </div>
+                      </div>
+
+                      <!-- Meals list -->
+                      <template x-for="(meal, mealIdx) in $store.planner.activePlan.meals" :key="mealIdx">
+                        <div class="meal-card" style="margin-bottom:14px">
+                          <!-- Meal header -->
+                          <div class="meal-card-header">
+                            <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0"
+                              x-text="mealIdx + 1"></div>
+                            <input x-model="meal.name" @input="$store.planner.debouncedSave()"
+                              style="font-size:0.9rem;font-weight:600;background:transparent;border:none;flex:1;padding:2px 4px"
+                              placeholder="Meal name (e.g. Breakfast)" />
+                            <!-- Meal totals -->
+                            <div style="display:flex;gap:12px;font-size:0.78rem;color:var(--text3);flex-shrink:0">
+                              <span><span x-text="$store.planner.mealTotals(mealIdx).calories"></span> kcal</span>
+                              <span style="color:var(--accent)"><span x-text="$store.planner.mealTotals(mealIdx).protein"></span>g prot</span>
+                            </div>
+                            <button class="btn-icon" style="color:var(--danger);width:26px;height:26px;flex-shrink:0" title="Remove meal"
+                              @click="$store.planner.removeMeal(mealIdx)">
+                              <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            </button>
+                          </div>
+
+                          <!-- Column header for items -->
+                          <div class="meal-item-grid" style="background:var(--surface2);padding-top:6px;padding-bottom:6px">
+                            <span style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600">Food</span>
+                            <span style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600;text-align:center">Qty (g)</span>
+                            <span style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600;text-align:center">Kcal</span>
+                            <span style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);font-weight:600;text-align:center">Protein</span>
+                            <span class="col-fats" style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600;text-align:center">Fats</span>
+                            <span class="col-cost" style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600;text-align:center">Cost</span>
+                            <span></span>
+                          </div>
+
+                          <!-- Food items -->
+                          <template x-for="(item, itemIdx) in meal.items" :key="itemIdx">
+                            <div class="meal-item-grid">
+                              <!-- Food name (autocomplete) -->
+                              <div style="position:relative" x-data="{ open: false, q: $store.planner.foodName(item.foodId) }">
+                                <input :value="q"
+                                  @input="q = $event.target.value; open = true"
+                                  @focus="open = true"
+                                  @blur="setTimeout(() => { open = false; if (!$store.planner.foodById(item.foodId)) q = '' }, 200)"
+                                  @keydown.escape="open = false"
+                                  placeholder="Search food…"
+                                  style="width:100%;padding:4px 8px;font-size:0.8rem" />
+                                <div x-show="open && q.length > 0" class="ac-dropdown">
+                                  <template x-for="food in $store.planner.searchFoods(q)" :key="food.id">
+                                    <div class="ac-item" @mousedown.prevent="item.foodId = food.id; q = food.name; open = false; $store.planner.debouncedSave()">
+                                      <span x-text="food.name"></span>
+                                      <span style="font-size:0.72rem;color:var(--accent)" x-text="food.protein + 'g P'"></span>
+                                    </div>
+                                  </template>
+                                  <div x-show="!$store.planner.searchFoods(q).length" class="ac-item" style="color:var(--text3)">No foods found</div>
+                                </div>
+                              </div>
+
+                              <!-- Quantity -->
+                              <input type="number" x-model.number="item.quantity"
+                                @input="$store.planner.debouncedSave()"
+                                placeholder="100" min="0" step="1" style="text-align:center" />
+
+                              <!-- Computed: Calories -->
+                              <span style="text-align:center;color:var(--text2)" x-text="$store.planner.itemCalc(item).calories || '—'"></span>
+
+                              <!-- Computed: Protein -->
+                              <span style="text-align:center;color:var(--accent);font-weight:600" x-text="$store.planner.itemCalc(item).protein ? $store.planner.itemCalc(item).protein + 'g' : '—'"></span>
+
+                              <!-- Computed: Fats -->
+                              <span class="col-fats" style="text-align:center;color:var(--text3)" x-text="$store.planner.itemCalc(item).fats ? $store.planner.itemCalc(item).fats + 'g' : '—'"></span>
+
+                              <!-- Computed: Cost -->
+                              <span class="col-cost" style="text-align:center;color:var(--text3);font-size:0.8rem" x-text="$store.planner.itemCalc(item).cost != null ? $store.planner.itemCalc(item).cost.toFixed(2) + ' lv' : '—'"></span>
+
+                              <!-- Remove item -->
+                              <button class="btn-icon" style="width:26px;height:26px;color:var(--danger)" title="Remove"
+                                @click="meal.items.splice(itemIdx, 1); $store.planner.debouncedSave()">
+                                <svg style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                              </button>
+                            </div>
+                          </template>
+
+                          <!-- Add food to meal -->
+                          <div style="padding:10px 16px;border-top:1px solid var(--border)">
+                            <button class="btn btn-ghost btn-sm" style="color:var(--accent)"
+                              @click="meal.items.push({ foodId: '', quantity: 100 }); $store.planner.debouncedSave()">
+                              <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                              Add Food
+                            </button>
+                          </div>
+                        </div>
+                      </template>
+
+                      <!-- Add meal -->
+                      <button class="btn btn-secondary" @click="$store.planner.addMeal()">
+                        <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                        Add Meal
+                      </button>
+                    </div>
+                  </template>
+
+                  <!-- ── TAB: SHOPPING LIST ───────────────────────── -->
+                  <template x-if="$store.planner.tab === 'shopping'">
+                    <div>
+                      <!-- Day selector -->
+                      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+                        <span style="font-size:0.85rem;color:var(--text3)">Calculate for</span>
+                        <div style="display:flex;gap:6px">
+                          <template x-for="d in [5, 6, 30]" :key="d">
+                            <button class="btn btn-sm" :class="$store.planner.shopDays === d ? 'btn-primary' : 'btn-secondary'"
+                              @click="$store.planner.shopDays = d" x-text="d + ' days'"></button>
+                          </template>
+                          <div style="display:flex;align-items:center;gap:6px">
+                            <span style="font-size:0.8rem;color:var(--text3)">Custom:</span>
+                            <input type="number" x-model.number="$store.planner.shopDays" min="1" max="365" style="width:60px;padding:4px 8px;font-size:0.8rem;text-align:center" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Shopping table -->
+                      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+                        <!-- Header -->
+                        <div class="shop-row" style="background:var(--surface2)">
+                          <span style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600">Food</span>
+                          <span class="col-pkg" style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600;text-align:center">Pkg (g)</span>
+                          <span style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600;text-align:center">Need (g)</span>
+                          <span style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);font-weight:600;text-align:center">Buy</span>
+                          <span style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600;text-align:center">Cost</span>
+                        </div>
+
+                        <template x-for="entry in $store.planner.shoppingList" :key="entry.foodId">
+                          <div class="shop-row">
+                            <div>
+                              <div style="font-size:0.875rem;font-weight:500" x-text="entry.name"></div>
+                              <div style="font-size:0.72rem;color:var(--text3)" x-text="entry.priceInfo"></div>
+                            </div>
+                            <div class="col-pkg" style="text-align:center;color:var(--text2);font-size:0.85rem" x-text="entry.packageWeight ? entry.packageWeight + 'g' : '—'"></div>
+                            <div style="text-align:center">
+                              <input type="number" x-model.number="entry.overrideGrams"
+                                :placeholder="entry.totalGrams"
+                                style="width:100%;text-align:center"
+                                @input="$store.planner.updateShopEntry(entry)" />
+                            </div>
+                            <div style="text-align:center;font-weight:600;color:var(--accent)" x-text="entry.buyDisplay"></div>
+                            <div style="text-align:center;color:var(--text2);font-size:0.85rem" x-text="entry.costDisplay"></div>
+                          </div>
+                        </template>
+
+                        <div x-show="!$store.planner.shoppingList.length" class="empty-state" style="padding:40px">
+                          <p style="font-size:0.9rem">Add foods to your meals to see the shopping list</p>
+                        </div>
+
+                        <!-- Total row -->
+                        <div x-show="$store.planner.shoppingList.length > 0"
+                          style="display:grid;grid-template-columns:1fr auto auto auto auto;align-items:center;gap:8px;padding:10px 14px;background:var(--surface2);border-top:2px solid var(--border)">
+                          <span style="font-weight:700;color:var(--text)">Total for <span x-text="$store.planner.shopDays"></span> days</span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span style="font-weight:700;color:var(--accent);text-align:center" x-text="$store.planner.shoppingTotalCost > 0 ? $store.planner.shoppingTotalCost.toFixed(2) + ' lv' : '—'"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- ── TAB: COST OVERVIEW ───────────────────────── -->
+                  <template x-if="$store.planner.tab === 'costs'">
+                    <div>
+                      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px">
+                        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+                          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);margin-bottom:8px">Daily Cost</div>
+                          <div style="font-size:1.4rem;font-weight:700;color:var(--text)" x-text="$store.planner.dailyTotals.cost > 0 ? $store.planner.dailyTotals.cost.toFixed(2) + ' lv' : '—'"></div>
+                        </div>
+                        <template x-for="d in [5, 6, 30]" :key="d">
+                          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+                            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);margin-bottom:8px" x-text="d + '-Day Cost'"></div>
+                            <div style="font-size:1.4rem;font-weight:700;color:var(--accent)" x-text="$store.planner.dailyTotals.cost > 0 ? ($store.planner.dailyTotals.cost * d).toFixed(2) + ' lv' : '—'"></div>
+                          </div>
+                        </template>
+                      </div>
+
+                      <!-- Nutrition overview -->
+                      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+                        <div style="font-size:0.8rem;font-weight:600;margin-bottom:16px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Daily Nutrition Breakdown</div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px">
+                          <div>
+                            <div style="font-size:0.75rem;color:var(--text3);margin-bottom:4px">Calories</div>
+                            <div style="font-size:1.2rem;font-weight:700" x-text="$store.planner.dailyTotals.calories + ' kcal'"></div>
+                            <div x-show="$store.planner.activePlan.targetCalories" style="font-size:0.72rem;margin-top:2px" :class="$store.planner.calorieClass === 'bad' ? 'badge badge-danger' : $store.planner.calorieClass === 'warn' ? 'badge badge-warning' : 'badge badge-accent'" x-text="$store.planner.calorieClass === 'good' ? '✅ On target' : $store.planner.calorieClass === 'warn' ? '⚠️ Slightly over' : '🔴 Over target'"></div>
+                          </div>
+                          <div>
+                            <div style="font-size:0.75rem;color:var(--text3);margin-bottom:4px">Protein</div>
+                            <div style="font-size:1.2rem;font-weight:700;color:var(--accent)" x-text="$store.planner.dailyTotals.protein + 'g'"></div>
+                            <div x-show="$store.planner.activePlan.targetProtein" style="font-size:0.72rem;margin-top:2px" :class="$store.planner.proteinClass === 'bad' ? 'badge badge-danger' : $store.planner.proteinClass === 'warn' ? 'badge badge-warning' : 'badge badge-accent'" x-text="$store.planner.proteinClass === 'good' ? '✅ On target' : $store.planner.proteinClass === 'warn' ? '⚠️ Slightly over' : '🔴 Over target'"></div>
+                          </div>
+                          <div>
+                            <div style="font-size:0.75rem;color:var(--text3);margin-bottom:4px">Fats</div>
+                            <div style="font-size:1.2rem;font-weight:700" x-text="$store.planner.dailyTotals.fats + 'g'"></div>
+                          </div>
+                          <div>
+                            <div style="font-size:0.75rem;color:var(--text3);margin-bottom:4px">Carbs</div>
+                            <div style="font-size:1.2rem;font-weight:700" x-text="$store.planner.dailyTotals.carbs + 'g'"></div>
+                          </div>
+                        </div>
+
+                        <!-- Macro pie visual (ASCII bars) -->
+                        <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
+                          <div style="font-size:0.75rem;color:var(--text3);margin-bottom:10px">Calorie Sources (estimated)</div>
+                          <div x-data="{ macros: $store.planner.macroPercents }">
+                            <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin-bottom:8px">
+                              <div :style="'width:' + macros.proteinPct + '%;background:#22c55e'" title="Protein"></div>
+                              <div :style="'width:' + macros.fatsPct + '%;background:#f59e0b'" title="Fats"></div>
+                              <div :style="'width:' + macros.carbsPct + '%;background:#3b82f6'" title="Carbs"></div>
+                            </div>
+                            <div style="display:flex;gap:14px;font-size:0.75rem">
+                              <span><span style="color:#22c55e">●</span> Protein <span style="color:var(--text2)" x-text="macros.proteinPct + '%'"></span></span>
+                              <span><span style="color:#f59e0b">●</span> Fats <span style="color:var(--text2)" x-text="macros.fatsPct + '%'"></span></span>
+                              <span><span style="color:#3b82f6">●</span> Carbs <span style="color:var(--text2)" x-text="macros.carbsPct + '%'"></span></span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+
+                </div>
+              </template>
+            </main>
+          </div><!-- /body -->
+
+          <!-- ═ MODALS ══════════════════════════════════════════════ -->
+
+          <!-- Delete Plan Modal -->
+          <template x-if="$store.planner.modal === 'deletePlan'">
+            <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px" @click.self="$store.planner.closeModal()">
+              <div class="modal-box" style="max-width:380px" @click.stop>
+                <h2 style="font-size:1rem;font-weight:700;margin-bottom:8px">Delete Meal Plan</h2>
+                <p style="color:var(--text3);font-size:0.875rem;margin-bottom:20px">
+                  Delete <strong x-text="$store.planner.mealPlans.find(p=>p.id===$store.planner.deletingPlanId)?.name"></strong>? This cannot be undone.
+                </p>
+                <div style="display:flex;gap:10px;justify-content:flex-end">
+                  <button class="btn btn-secondary" @click="$store.planner.closeModal()">Cancel</button>
+                  <button class="btn btn-danger" @click="$store.planner.confirmDeletePlan()" :disabled="$store.planner.saving">
+                    <span x-show="!$store.planner.saving">Delete</span>
+                    <span x-show="$store.planner.saving">Deleting…</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- ═ TOASTS ══════════════════════════════════════════════ -->
+          <div style="position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:200">
+            <template x-for="toast in $store.planner.toasts" :key="toast.id">
+              <div class="toast" :class="toast.type === 'error' ? 'toast-error' : 'toast-success'">
+                <svg style="width:16px;height:16px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <template x-if="toast.type !== 'error'"><path d="M20 6L9 17l-5-5"/></template>
+                  <template x-if="toast.type === 'error'"><path d="M18 6L6 18M6 6l12 12"/></template>
+                </svg>
+                <span x-text="toast.msg"></span>
+              </div>
+            </template>
+          </div>
+
+        </div><!-- /app shell -->
+      </template>
+    </div><!-- /root -->
+
+    <script type="module">
+      import Alpine from "https://cdn.jsdelivr.net/npm/alpinejs@3/dist/module.esm.js";
+      import { auth } from "./js/firebase.js";
+      import * as DB from "./js/db.js";
+      import { calcItem, sumItems, statusClass, shoppingCalc, round, pricePer100g } from "./js/utils.js";
+      import {
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
+      // Debounce helper
+      function debounce(fn, ms = 600) {
+        let t;
+        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+      }
+
+      Alpine.store("planner", {
+        // ── Auth ──────────────────────────────────────────────
+        authState: "loading",
+        user: null,
+        authEmail: "",
+        authPassword: "",
+        authLoading: false,
+        authError: "",
+
+        // ── Data ──────────────────────────────────────────────
+        foods: [],
+        mealPlans: [],
+
+        // ── Active plan ───────────────────────────────────────
+        activePlan: null,
+        activePlanId: null,
+
+        // ── UI ────────────────────────────────────────────────
+        sidebarOpen: window.innerWidth >= 769,
+        tab: "meals",          // meals | shopping | costs
+        shopDays: 5,
+        shopOverrides: {},     // foodId → overrideGrams
+        saving: false,
+        modal: null,
+        deletingPlanId: null,
+        toasts: [],
+
+        // ── Init ──────────────────────────────────────────────
+        init() {
+          this.debouncedSave = debounce(() => this._savePlan(), 800);
+
+          onAuthStateChanged(auth, async (user) => {
+            if (user) {
+              this.user = user;
+              this.authState = "authenticated";
+              await this.loadData();
+              // Auto-load plan from URL param
+              const params = new URLSearchParams(window.location.search);
+              const planId = params.get("plan");
+              if (planId) this.loadPlan(planId);
+            } else {
+              this.user = null;
+              this.authState = "unauthenticated";
+            }
+          });
+        },
+
+        async loadData() {
+          try {
+            const [foods, plans] = await Promise.all([
+              DB.getFoods(this.user.uid),
+              DB.getMealPlans(this.user.uid),
+            ]);
+            this.foods = foods;
+            this.mealPlans = plans;
+          } catch (e) {
+            this.toast("Failed to load data: " + e.message, "error");
+          }
+        },
+
+        // ── Auth ──────────────────────────────────────────────
+        async login() {
+          this.authError = "";
+          if (!this.authEmail || !this.authPassword) { this.authError = "Please fill in all fields."; return; }
+          this.authLoading = true;
+          try {
+            await signInWithEmailAndPassword(auth, this.authEmail, this.authPassword);
+          } catch (e) {
+            const map = {
+              "auth/user-not-found": "No account with that email.",
+              "auth/wrong-password": "Incorrect password.",
+              "auth/invalid-credential": "Invalid email or password.",
+              "auth/too-many-requests": "Too many attempts. Try again later.",
+            };
+            this.authError = map[e.code] ?? "Sign-in failed. Please try again.";
+          } finally {
+            this.authLoading = false;
+          }
+        },
+
+        async logout() {
+          await signOut(auth);
+          this.foods = [];
+          this.mealPlans = [];
+          this.activePlan = null;
+          this.activePlanId = null;
+        },
+
+        // ── Food helpers ──────────────────────────────────────
+        get foodMap() {
+          const m = {};
+          for (const f of this.foods) m[f.id] = f;
+          return m;
+        },
+
+        foodById(id) { return this.foodMap[id] || null; },
+
+        foodName(id) {
+          const f = this.foodById(id);
+          return f ? f.name : "";
+        },
+
+        searchFoods(q) {
+          if (!q) return [];
+          const lower = q.toLowerCase();
+          return this.foods.filter(f => f.name.toLowerCase().includes(lower)).slice(0, 12);
+        },
+
+        // ── Plan management ───────────────────────────────────
+        newPlan() {
+          this.activePlan = {
+            name: "New Meal Plan",
+            targetCalories: 2000,
+            targetProtein: 150,
+            days: 5,
+            meals: [
+              { name: "Breakfast", items: [] },
+              { name: "Lunch",     items: [] },
+              { name: "Dinner",    items: [] },
+            ],
+          };
+          this.activePlanId = null;
+          this.tab = "meals";
+          this.shopOverrides = {};
+          this._savePlan(); // create in Firestore immediately
+        },
+
+        loadPlan(id) {
+          const plan = this.mealPlans.find(p => p.id === id);
+          if (!plan) return;
+          this.activePlan = JSON.parse(JSON.stringify(plan)); // deep clone
+          this.activePlanId = id;
+          this.shopOverrides = {};
+          this.tab = "meals";
+        },
+
+        async _savePlan() {
+          if (!this.activePlan || !this.user) return;
+          this.saving = true;
+          try {
+            const planData = { ...this.activePlan };
+            if (this.activePlanId) planData.id = this.activePlanId;
+            const saved = await DB.saveMealPlan(this.user.uid, planData);
+            if (!this.activePlanId) {
+              this.activePlanId = saved.id;
+              this.activePlan = { ...this.activePlan, id: saved.id };
+              this.mealPlans = [...this.mealPlans, saved];
+            } else {
+              this.mealPlans = this.mealPlans.map(p => p.id === this.activePlanId ? { ...p, ...planData } : p);
+            }
+          } catch (e) {
+            this.toast("Save failed: " + e.message, "error");
+          } finally {
+            this.saving = false;
+          }
+        },
+
+        addMeal() {
+          const names = ["Breakfast","Lunch","Dinner","Snack","Pre-workout","Post-workout"];
+          const existing = (this.activePlan.meals || []).map(m => m.name);
+          const name = names.find(n => !existing.includes(n)) || `Meal ${(this.activePlan.meals?.length || 0) + 1}`;
+          if (!this.activePlan.meals) this.activePlan.meals = [];
+          this.activePlan.meals.push({ name, items: [] });
+          this.debouncedSave();
+        },
+
+        removeMeal(idx) {
+          this.activePlan.meals.splice(idx, 1);
+          this.debouncedSave();
+        },
+
+        // ── Calculations ──────────────────────────────────────
+        itemCalc(item) {
+          const food = this.foodById(item.foodId);
+          if (!food || !item.quantity) return { calories: 0, protein: 0, fats: 0, carbs: 0, cost: null };
+          return calcItem(food, item.quantity);
+        },
+
+        mealTotals(mealIdx) {
+          const meal = this.activePlan?.meals?.[mealIdx];
+          if (!meal) return { calories: 0, protein: 0, fats: 0, carbs: 0, cost: 0 };
+          return sumItems(meal.items, this.foodMap);
+        },
+
+        get dailyTotals() {
+          if (!this.activePlan?.meals) return { calories: 0, protein: 0, fats: 0, carbs: 0, cost: 0 };
+          const all = this.activePlan.meals.flatMap(m => m.items);
+          return sumItems(all, this.foodMap);
+        },
+
+        get calorieClass() {
+          return statusClass(this.dailyTotals.calories, this.activePlan?.targetCalories);
+        },
+
+        get proteinClass() {
+          return statusClass(this.dailyTotals.protein, this.activePlan?.targetProtein);
+        },
+
+        get macroPercents() {
+          const t = this.dailyTotals;
+          const proteinKcal = t.protein * 4;
+          const fatsKcal    = t.fats    * 9;
+          const carbsKcal   = t.carbs   * 4;
+          const total = proteinKcal + fatsKcal + carbsKcal;
+          if (!total) return { proteinPct: 0, fatsPct: 0, carbsPct: 0 };
+          return {
+            proteinPct: round(proteinKcal / total * 100, 0),
+            fatsPct:    round(fatsKcal    / total * 100, 0),
+            carbsPct:   round(carbsKcal   / total * 100, 0),
+          };
+        },
+
+        // ── Shopping list ─────────────────────────────────────
+        get shoppingList() {
+          if (!this.activePlan?.meals) return [];
+
+          // Aggregate daily grams per food
+          const dailyByFood = {};
+          for (const meal of this.activePlan.meals) {
+            for (const item of meal.items) {
+              if (!item.foodId || !item.quantity) continue;
+              dailyByFood[item.foodId] = (dailyByFood[item.foodId] || 0) + Number(item.quantity);
+            }
+          }
+
+          return Object.entries(dailyByFood).map(([foodId, dailyGrams]) => {
+            const food = this.foodById(foodId);
+            if (!food) return null;
+            const totalGrams = round(dailyGrams * this.shopDays, 0);
+            const overrideGrams = this.shopOverrides[foodId] != null ? this.shopOverrides[foodId] : null;
+            const gramsToUse = overrideGrams != null ? overrideGrams : totalGrams;
+
+            // Packages needed
+            let buyDisplay = "—";
+            let costDisplay = "—";
+            let cost = 0;
+
+            if (food.packageWeight > 0) {
+              const pkgs = Math.ceil(gramsToUse / food.packageWeight);
+              buyDisplay = pkgs + " pkg";
+              if (food.price > 0) {
+                cost = round(pkgs * food.price, 2);
+                costDisplay = cost.toFixed(2) + " lv";
+              }
+            } else if (food.priceType === "per_kg" && food.price > 0) {
+              const kgs = gramsToUse / 1000;
+              cost = round(kgs * food.price, 2);
+              costDisplay = cost.toFixed(2) + " lv";
+              buyDisplay = round(gramsToUse / 1000, 2) + " kg";
+            }
+
+            const pp = pricePer100g(food);
+            const priceInfo = food.price > 0
+              ? (food.priceType === "per_kg" ? food.price.toFixed(2) + " lv/kg" : food.price.toFixed(2) + " lv/pkg" + (food.packageWeight ? " (" + food.packageWeight + "g)" : ""))
+              : "";
+
+            return {
+              foodId,
+              name: food.name,
+              packageWeight: food.packageWeight || 0,
+              totalGrams,
+              overrideGrams: overrideGrams,
+              buyDisplay,
+              costDisplay,
+              priceInfo,
+              _cost: cost,
+            };
+          }).filter(Boolean);
+        },
+
+        get shoppingTotalCost() {
+          return round(this.shoppingList.reduce((s, e) => s + (e._cost || 0), 0), 2);
+        },
+
+        updateShopEntry(entry) {
+          // Called when user changes the "Need (g)" input
+          if (entry.overrideGrams === null || entry.overrideGrams === "" || isNaN(entry.overrideGrams)) {
+            delete this.shopOverrides[entry.foodId];
+          } else {
+            this.shopOverrides[entry.foodId] = Number(entry.overrideGrams);
+          }
+        },
+
+        // ── Modal management ──────────────────────────────────
+        openModal(name, id = null) {
+          this.modal = name;
+          this.deletingPlanId = id;
+        },
+
+        closeModal() {
+          this.modal = null;
+          this.deletingPlanId = null;
+        },
+
+        async confirmDeletePlan() {
+          this.saving = true;
+          try {
+            await DB.deleteMealPlan(this.user.uid, this.deletingPlanId);
+            this.mealPlans = this.mealPlans.filter(p => p.id !== this.deletingPlanId);
+            if (this.activePlanId === this.deletingPlanId) {
+              this.activePlan = null;
+              this.activePlanId = null;
+            }
+            this.toast("Plan deleted!");
+            this.closeModal();
+          } catch (e) {
+            this.toast("Delete failed: " + e.message, "error");
+          } finally {
+            this.saving = false;
+          }
+        },
+
+        // ── Toasts ────────────────────────────────────────────
+        toast(msg, type = "success") {
+          const id = Math.random().toString(36).slice(2);
+          this.toasts = [...this.toasts, { id, msg, type }];
+          setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000);
+        },
+      });
+
+      Alpine.start();
+    </script>
+  </body>
+</html>
