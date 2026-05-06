@@ -602,16 +602,16 @@ export function registerStore(Alpine) {
     },
 
     getDraftWeight(eid, setKey) {
-      const w = this.workoutDraft[eid]?.[setKey]?.weight;
-      if (w !== undefined && w !== null && w !== "") return w;
+      const set = this.workoutDraft[eid]?.[setKey];
+      if (set !== undefined && "weight" in set) return set.weight ?? "";
       const ex = this.exercises.find((e) => e.id === eid);
       const entry = this._getTodayEntry(ex?.setHistory?.[setKey] ?? []);
       return entry?.weight ?? "";
     },
 
     getDraftReps(eid, setKey) {
-      const r = this.workoutDraft[eid]?.[setKey]?.reps;
-      if (r !== undefined && r !== null && r !== "") return r;
+      const set = this.workoutDraft[eid]?.[setKey];
+      if (set !== undefined && "reps" in set) return set.reps ?? "";
       const ex = this.exercises.find((e) => e.id === eid);
       const entry = this._getTodayEntry(ex?.setHistory?.[setKey] ?? []);
       return entry?.reps ?? "";
