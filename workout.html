@@ -1812,7 +1812,7 @@
                                             :value="$store.gym.getDraftSet(activeEx.id, currentSet.key).weight ?? ''"
                                             @input="$store.gym.updateWeight(activeEx.id, currentSet.key, $event.target.value)"
                                           />
-                                          <span class="wi-adornment">kg</span>
+                                          <span class="wi-adornment" x-text="$store.gym.t('kg_abbr')"></span>
                                         </div>
                                       </div>
                                       <div class="wi-group">
@@ -1828,7 +1828,7 @@
                                             :value="($store.gym.getDraftSet(activeEx.id, currentSet.key).reps || '') || ''"
                                             @input="$store.gym.updateReps(activeEx.id, currentSet.key, $event.target.value)"
                                           />
-                                          <span class="wi-adornment">reps</span>
+                                          <span class="wi-adornment" x-text="$store.gym.t('reps_abbr')"></span>
                                         </div>
                                       </div>
                                       <div class="set-history">
@@ -2035,7 +2035,7 @@
                                             :value="$store.gym.getDraftSet(item.id, currentSet.key).weight ?? ''"
                                             @input="$store.gym.updateWeight(item.id, currentSet.key, $event.target.value)"
                                           />
-                                          <span class="wi-adornment">kg</span>
+                                          <span class="wi-adornment" x-text="$store.gym.t('kg_abbr')"></span>
                                         </div>
                                       </div>
                                       <div class="wi-group">
@@ -2051,7 +2051,7 @@
                                             :value="($store.gym.getDraftSet(item.id, currentSet.key).reps || '') || ''"
                                             @input="$store.gym.updateReps(item.id, currentSet.key, $event.target.value)"
                                           />
-                                          <span class="wi-adornment">reps</span>
+                                          <span class="wi-adornment" x-text="$store.gym.t('reps_abbr')"></span>
                                         </div>
                                       </div>
                                       <div class="set-history">

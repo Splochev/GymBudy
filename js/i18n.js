@@ -54,6 +54,7 @@ export const translations = {
     // ── Workout mode ──────────────────────────────────────────
     set_abbr: "Set",
     reps_abbr: "reps",
+    kg_abbr: "kg",
     no_history: "No history",
     sets_count: (n) => `${n} sets`,
 
@@ -238,6 +239,7 @@ export const translations = {
     // ── Workout mode ──────────────────────────────────────────
     set_abbr: "Сер",
     reps_abbr: "повт",
+    kg_abbr: "кг",
     no_history: "Няма история",
     sets_count: (n) => `${n} серии`,
 
