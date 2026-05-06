@@ -375,6 +375,25 @@ input[type="checkbox"] {
 .wi-group input {
   width: 100%;
 }
+.wi-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.wi-input-wrap input {
+  width: 100%;
+  padding-right: 36px;
+}
+.wi-adornment {
+  position: absolute;
+  right: 8px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text3);
+  pointer-events: none;
+  text-transform: uppercase;
+}
 .set-history {
   display: flex;
   flex-direction: column;

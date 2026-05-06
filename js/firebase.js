@@ -4,13 +4,13 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-aut
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAn48uAay8U1YoHVuYAhqFqPb3Ms6jUahU",
-  authDomain: "gymbud-8f549.firebaseapp.com",
-  projectId: "gymbud-8f549",
-  storageBucket: "gymbud-8f549.firebasestorage.app",
-  messagingSenderId: "419496598304",
-  appId: "1:419496598304:web:adc0e82094a7d961de1545",
-  measurementId: "G-QQHHWKG14P",
+  apiKey: "AIzaSyCIJlxyWuBSUMepIfPGKaeBvcHDsdFVftY",
+  authDomain: "personalbudy-2f735.firebaseapp.com",
+  projectId: "personalbudy-2f735",
+  storageBucket: "personalbudy-2f735.firebasestorage.app",
+  messagingSenderId: "138709908215",
+  appId: "1:138709908215:web:63a6177bda808586bfb1f2",
+  measurementId: "G-445HRBCB61",
 };
 
 const app = initializeApp(firebaseConfig);

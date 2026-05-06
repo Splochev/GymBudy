@@ -19,7 +19,6 @@ import {
   deleteDoc,
   query,
   orderBy,
-  limit,
   writeBatch,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
@@ -63,13 +62,11 @@ function cacheBust(...keys) {
   for (const k of keys) localStorage.removeItem("gymbudy:" + k);
 }
 // ─── GLOBAL EXERCISES ─────────────────────────────────────────
-const GLOBAL_EXERCISES_LIMIT = 20;
-
 export async function getGlobalExercises() {
   const cached = cacheGet("exercises");
   if (cached) return cached;
   const snap = await getDocs(
-    query(col("exercises"), orderBy("name"), limit(GLOBAL_EXERCISES_LIMIT)),
+    query(col("exercises"), orderBy("name")),
   );
   const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   cacheSet("exercises", data, DAY);

@@ -1722,12 +1722,15 @@
                                   <!-- Active exercise metadata bar -->
                                   <div style="display:flex;align-items:center;gap:8px;padding:10px 0 6px;flex-wrap:wrap;">
                                     <div style="font-weight:600;font-size:0.85rem;flex-shrink:0" x-text="activeEx.name"></div>
+                                    <span x-text="$store.gym.t('sets_count', activeEx.sets.length)" style="font-size:0.75rem;color:var(--text3)"></span>
                                     <template
                                       x-for="mg in (Array.isArray(activeEx.muscleGroups) ? activeEx.muscleGroups : (activeEx.muscleGroups||'').split(','))"
                                       :key="mg"
                                     >
                                       <span class="badge" x-text="mg.trim()" style="font-size:0.65rem"></span>
                                     </template>
+                                    <span x-show="$store.gym.getMarkerValue(activeEx.id,'Periodization')" class="badge badge-accent" x-text="$store.gym.getMarkerValue(activeEx.id,'Periodization')" style="font-size:0.65rem"></span>
+                                    <span x-show="$store.gym.getMarkerValue(activeEx.id,'LI')" class="badge badge-warning" x-text="'LI '+$store.gym.getMarkerValue(activeEx.id,'LI')+'kg'" style="font-size:0.65rem"></span>
                                     <div
                                       x-show="activeEx.videoLink"
                                       x-data="{ hovered: false, tipX: 0, tipY: 0 }"
@@ -1801,26 +1804,32 @@
                                         <label
                                           x-text="$store.gym.t('weight_goals')"
                                         ></label>
-                                        <input
-                                          type="number"
-                                          step="0.25"
-                                          placeholder="kg"
-                                          :value="$store.gym.getDraftSet(activeEx.id, currentSet.key).weight ?? ''"
-                                          @input="$store.gym.updateWeight(activeEx.id, currentSet.key, $event.target.value)"
-                                        />
+                                        <div class="wi-input-wrap">
+                                          <input
+                                            type="number"
+                                            step="0.25"
+                                            placeholder="0"
+                                            :value="$store.gym.getDraftSet(activeEx.id, currentSet.key).weight ?? ''"
+                                            @input="$store.gym.updateWeight(activeEx.id, currentSet.key, $event.target.value)"
+                                          />
+                                          <span class="wi-adornment">kg</span>
+                                        </div>
                                       </div>
                                       <div class="wi-group">
                                         <label
                                           x-text="$store.gym.t('reps')"
                                         ></label>
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          max="999"
-                                          placeholder=""
-                                          :value="$store.gym.getDraftSet(activeEx.id, currentSet.key).reps ?? ''"
-                                          @input="$store.gym.updateReps(activeEx.id, currentSet.key, $event.target.value)"
-                                        />
+                                        <div class="wi-input-wrap">
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            max="999"
+                                            placeholder="0"
+                                            :value="($store.gym.getDraftSet(activeEx.id, currentSet.key).reps || '') || ''"
+                                            @input="$store.gym.updateReps(activeEx.id, currentSet.key, $event.target.value)"
+                                          />
+                                          <span class="wi-adornment">reps</span>
+                                        </div>
                                       </div>
                                       <div class="set-history">
                                         <template
@@ -2018,26 +2027,32 @@
                                         <label
                                           x-text="$store.gym.t('weight_goals')"
                                         ></label>
-                                        <input
-                                          type="number"
-                                          step="0.25"
-                                          placeholder="kg"
-                                          :value="$store.gym.getDraftSet(item.id, currentSet.key).weight ?? ''"
-                                          @input="$store.gym.updateWeight(item.id, currentSet.key, $event.target.value)"
-                                        />
+                                        <div class="wi-input-wrap">
+                                          <input
+                                            type="number"
+                                            step="0.25"
+                                            placeholder="0"
+                                            :value="$store.gym.getDraftSet(item.id, currentSet.key).weight ?? ''"
+                                            @input="$store.gym.updateWeight(item.id, currentSet.key, $event.target.value)"
+                                          />
+                                          <span class="wi-adornment">kg</span>
+                                        </div>
                                       </div>
                                       <div class="wi-group">
                                         <label
                                           x-text="$store.gym.t('reps')"
                                         ></label>
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          max="999"
-                                          placeholder=""
-                                          :value="$store.gym.getDraftSet(item.id, currentSet.key).reps ?? ''"
-                                          @input="$store.gym.updateReps(item.id, currentSet.key, $event.target.value)"
-                                        />
+                                        <div class="wi-input-wrap">
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            max="999"
+                                            placeholder="0"
+                                            :value="($store.gym.getDraftSet(item.id, currentSet.key).reps || '') || ''"
+                                            @input="$store.gym.updateReps(item.id, currentSet.key, $event.target.value)"
+                                          />
+                                          <span class="wi-adornment">reps</span>
+                                        </div>
                                       </div>
                                       <div class="set-history">
                                         <template
