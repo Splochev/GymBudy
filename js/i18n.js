@@ -7,6 +7,8 @@ export const translations = {
 
     // ── Top bar ───────────────────────────────────────────────
     workouts: "Workouts",
+    nav_foods: "Foods",
+    nav_planner: "Planner",
     history: "History",
     sign_out: "Sign out",
     toggle_sidebar: "Toggle sidebar",
@@ -190,6 +192,8 @@ export const translations = {
 
     // ── Top bar ───────────────────────────────────────────────
     workouts: "Тренировки",
+    nav_foods: "Храни",
+    nav_planner: "Планер",
     history: "История",
     sign_out: "Изход",
     toggle_sidebar: "Скрий/покажи панела",
