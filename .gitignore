@@ -2,3 +2,4 @@ firestore.rules
 seed.html
 excercises.json
 TODO.md
+.vscode/settings.json
