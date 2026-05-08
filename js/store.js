@@ -571,11 +571,12 @@ export function registerStore(Alpine) {
     },
 
     updateWeight(eid, setKey, value) {
+      const existingReps = this.workoutDraft[eid]?.[setKey]?.reps ?? this.getDraftReps(eid, setKey);
       this.workoutDraft = {
         ...this.workoutDraft,
         [eid]: {
           ...(this.workoutDraft[eid] ?? {}),
-          [setKey]: { ...(this.workoutDraft[eid]?.[setKey] ?? {}), weight: value },
+          [setKey]: { reps: existingReps, weight: value },
         },
       };
       this.saveStatus = "saving";
@@ -584,11 +585,12 @@ export function registerStore(Alpine) {
     },
 
     updateReps(eid, setKey, value) {
+      const existingWeight = this.workoutDraft[eid]?.[setKey]?.weight ?? this.getDraftWeight(eid, setKey);
       this.workoutDraft = {
         ...this.workoutDraft,
         [eid]: {
           ...(this.workoutDraft[eid] ?? {}),
-          [setKey]: { ...(this.workoutDraft[eid]?.[setKey] ?? {}), reps: value },
+          [setKey]: { weight: existingWeight, reps: value },
         },
       };
       this.saveStatus = "saving";
