@@ -258,6 +258,11 @@ export function registerStore(Alpine) {
       }
     },
 
+    async openHistoryMode() {
+      await this.loadHistory();
+      this.mode = 'history';
+    },
+
     sessionLogs() {
       const logs = this.workoutLogs.filter(
         (log) => log.sessionId === this.selectedSessionId,

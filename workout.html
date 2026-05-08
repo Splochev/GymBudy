@@ -739,7 +739,7 @@
 
                       <!-- History button -->
                       <button
-                        @click="$store.gym.mode='history'; $store.gym.loadHistory()"
+                        @click="$store.gym.openHistoryMode()"
                         :style="$store.gym.mode==='history' ? 'color:var(--accent);background:var(--accent-bg);padding:8px 16px;border-radius:4px;display:flex;align-items:center;gap:6px;' : 'color:var(--text3);display:flex;align-items:center;gap:6px;'"
                         style="
                           display: flex;
