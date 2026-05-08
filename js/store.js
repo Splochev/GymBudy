@@ -252,10 +252,8 @@ export function registerStore(Alpine) {
     },
 
     async loadHistory() {
-      if (!this.historyLoaded) {
-        this.workoutLogs = await DB.getWorkoutLogs(this.user.uid);
-        this.historyLoaded = true;
-      }
+      this.workoutLogs = await DB.getWorkoutLogs(this.user.uid);
+      this.historyLoaded = true;
     },
 
     async openHistoryMode() {

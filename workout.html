@@ -2181,7 +2181,7 @@
                           x-for="log in $store.gym.sessionLogs()"
                           :key="log.id"
                         >
-                          <div x-data="{ open: false }" class="log-card">
+                          <div x-data="{ open: true }" class="log-card">
                             <div class="log-header" @click="open=!open">
                               <div
                                 style="
