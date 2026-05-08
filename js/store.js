@@ -259,8 +259,8 @@ export function registerStore(Alpine) {
     },
 
     async openHistoryMode() {
-      await this.loadHistory();
       this.mode = 'history';
+      await this.loadHistory();
     },
 
     sessionLogs() {
