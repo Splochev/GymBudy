@@ -192,7 +192,7 @@ input[type="checkbox"] {
   background: var(--surface2);
   color: var(--text2);
   border: 1px solid var(--border);
-  min-width: 75px;
+  min-width: 71px;
 }
 .badge-accent {
   background: var(--accent-bg);
