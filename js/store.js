@@ -113,7 +113,7 @@ export function registerStore(Alpine) {
     loading: true,
 
     // ── i18n ─────────────────────────────────────────────────
-    lang: localStorage.getItem("gymbudy-lang") || "en",
+    lang: localStorage.getItem("gymbuddy-lang") || "en",
 
     // ── Navigation ───────────────────────────────────────────
     view: "workout", // 'workout' | 'history'
@@ -165,7 +165,7 @@ export function registerStore(Alpine) {
 
     setLang(langCode) {
       this.lang = langCode;
-      localStorage.setItem("gymbudy-lang", langCode);
+      localStorage.setItem("gymbuddy-lang", langCode);
     },
 
     // ─── COMPUTED ────────────────────────────────────────────
@@ -1000,7 +1000,7 @@ export function registerStore(Alpine) {
 
     // ─── DRAFT PERSISTENCE (localStorage) ────────────────────
     _draftKey(sid) {
-      return `gymbudy-draft-${sid}-${todayStr()}`;
+      return `gymbuddy-draft-${sid}-${todayStr()}`;
     },
     _loadDraft(sid) {
       try {

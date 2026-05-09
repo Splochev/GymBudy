@@ -3,7 +3,7 @@
 export const translations = {
   en: {
     // ── Loading / misc ────────────────────────────────────────
-    loading: "Loading GymBudy…",
+    loading: "Loading GymBuddy…",
 
     // ── Top bar ───────────────────────────────────────────────
     workouts: "Workouts",
@@ -188,7 +188,7 @@ export const translations = {
 
   bg: {
     // ── Loading / misc ────────────────────────────────────────
-    loading: "Зарежда GymBudy…",
+    loading: "Зарежда GymBuddy…",
 
     // ── Top bar ───────────────────────────────────────────────
     workouts: "Тренировки",

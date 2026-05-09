@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GymBudy – Sign In</title>
+    <title>GymBuddy – Sign In</title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="stylesheet" href="./css/app.css" />
     <style>
@@ -84,7 +84,7 @@
             <rect x="16" y="7" width="3" height="10" rx="1" />
             <line x1="8" y1="12" x2="16" y2="12" />
           </svg>
-          <span>GymBudy</span>
+          <span>GymBuddy</span>
         </div>
 
         <!-- Language toggle -->
@@ -168,7 +168,7 @@
         password: "",
         loading: false,
         error: "",
-        lang: localStorage.getItem("gymbudy-lang") || "en",
+        lang: localStorage.getItem("gymbuddy-lang") || "en",
 
         t(key) {
           const tr = translations[this.lang] ?? translations.en;
@@ -178,7 +178,7 @@
 
         setLang(langCode) {
           this.lang = langCode;
-          localStorage.setItem("gymbudy-lang", langCode);
+          localStorage.setItem("gymbuddy-lang", langCode);
         },
 
         async login() {
