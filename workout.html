@@ -1187,7 +1187,7 @@
                                                           width: 26px;
                                                           height: 26px;
                                                         "
-                                                        :disabled="ex.sets.length<=1"
+                                                        :disabled="ex.sets.length<=0"
                                                         @click="$store.gym.removeSet(ex.id, setIndex)"
                                                       >
                                                         <svg
@@ -1501,7 +1501,7 @@
                                                   width: 26px;
                                                   height: 26px;
                                                 "
-                                                :disabled="item.sets.length<=1"
+                                                :disabled="item.sets.length<=0"
                                                 @click="$store.gym.removeSet(item.id, setIndex)"
                                               >
                                                 <svg
@@ -1747,12 +1747,14 @@
                                   <div style="display:flex;align-items:center;gap:8px;padding:10px 0 6px;flex-wrap:wrap;">
                                     <div style="font-weight:600;font-size:0.85rem;flex-shrink:0" x-text="activeEx.name"></div>
                                     <span x-text="$store.gym.t('sets_count', activeEx.sets.length)" style="font-size:0.75rem;color:var(--text3)"></span>
+                                    <span class="workout-mg-badges" style="display:contents">
                                     <template
                                       x-for="mg in (Array.isArray(activeEx.muscleGroups) ? activeEx.muscleGroups : (activeEx.muscleGroups||'').split(','))"
                                       :key="mg"
                                     >
                                       <span class="badge" x-text="mg.trim()" style="font-size:0.65rem"></span>
                                     </template>
+                                    </span>
                                     <span x-show="$store.gym.getMarkerValue(activeEx.id,'Periodization')" class="badge badge-accent" x-text="$store.gym.getMarkerValue(activeEx.id,'Periodization')" style="font-size:0.65rem"></span>
                                     <span x-show="$store.gym.getMarkerValue(activeEx.id,'LI')" class="badge badge-warning" x-text="'LI '+$store.gym.getMarkerValue(activeEx.id,'LI')+'kg'" style="font-size:0.65rem"></span>
                                     <div
@@ -1919,8 +1921,8 @@
                               >
                                   <div
                                   class="workout-card-header"
-                                  @click="expanded = !expanded"
-                                  style="cursor: pointer"
+                                  @click="item.sets.length && (expanded = !expanded)"
+                                  :style="item.sets.length ? 'cursor:pointer' : ''"
                                 >
                                   <div class="ex-num" x-text="idx+1"></div>
                                   <div style="flex: 1; min-width: 0">
@@ -1954,6 +1956,7 @@
                                           align-items: center;
                                         "
                                       ></span>
+                                      <span class="workout-mg-badges" style="display:contents">
                                       <template
                                         x-for="muscleGroup in (Array.isArray(item.muscleGroups)?item.muscleGroups:(item.muscleGroups||'').split(','))"
                                         :key="muscleGroup"
@@ -1964,6 +1967,7 @@
                                           style="font-size: 0.65rem"
                                         ></span>
                                       </template>
+                                      </span>
                                       <span
                                         x-show="$store.gym.getMarkerValue(item.id,'Periodization')"
                                         class="badge badge-accent"
@@ -2011,6 +2015,7 @@
                                     </template>
                                   </div>
                                   <button
+                                    x-show="item.sets.length"
                                     class="btn-icon"
                                     @click.stop="expanded = !expanded"
                                     style="flex-shrink:0;width:28px;height:28px"
@@ -2027,7 +2032,7 @@
                                   </button>
                                 </div>
                                 <div
-                                  x-show="expanded"
+                                  x-show="expanded && item.sets.length"
                                   style="
                                     border-top: 1px solid var(--border);
                                     padding: 0 16px 16px;
@@ -2150,7 +2155,7 @@
                     >
                       <div>
                         <div
-                          x-show="!$store.gym.sessionLogs().length"
+                          x-show="!$store.gym.sessionHistory().length"
                           class="empty-state"
                           style="padding-top: 40px"
                         >
@@ -2178,8 +2183,8 @@
                           ></p>
                         </div>
                         <template
-                          x-for="log in $store.gym.sessionLogs()"
-                          :key="log.id"
+                          x-for="log in $store.gym.sessionHistory()"
+                          :key="log.date"
                         >
                           <div x-data="{ open: true }" class="log-card">
                             <div class="log-header" @click="open=!open">

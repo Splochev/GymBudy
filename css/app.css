@@ -660,6 +660,9 @@ input[type="checkbox"] {
   .ex-card-header-badges {
     display: none !important;
   }
+  .workout-mg-badges {
+    display: none !important;
+  }
   .ex-card-mobile-badges {
     display: flex !important;
   }

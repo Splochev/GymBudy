@@ -283,6 +283,54 @@ export function registerStore(Alpine) {
       return [...byDate.values()].sort((a, b) => b.date.localeCompare(a.date));
     },
 
+    // Merged history: workoutLogs + setHistory from exercises (covers gaps and old dates)
+    sessionHistory() {
+      // Seed from workoutLogs
+      const byDate = new Map();
+      for (const log of this.sessionLogs()) {
+        byDate.set(log.date, {
+          date: log.date,
+          exercises: (log.exercises ?? []).map((e) => ({
+            name: e.name,
+            sets: [...(e.sets ?? [])],
+          })),
+        });
+      }
+
+      // Supplement using setHistory on each exercise document
+      for (const ex of this.exercises) {
+        for (const [setKey, entries] of Object.entries(ex.setHistory ?? {})) {
+          for (const entry of entries ?? []) {
+            if (!entry?.date) continue;
+            if (!byDate.has(entry.date)) {
+              byDate.set(entry.date, { date: entry.date, exercises: [] });
+            }
+            const day = byDate.get(entry.date);
+            let dayEx = day.exercises.find((e) => e.name === ex.name);
+            if (!dayEx) {
+              dayEx = { name: ex.name, sets: [] };
+              day.exercises.push(dayEx);
+            }
+            if (!dayEx.sets.find((s) => s.key === setKey)) {
+              dayEx.sets.push({ key: setKey, weight: entry.weight, reps: entry.reps });
+            }
+          }
+        }
+      }
+
+      return [...byDate.values()]
+        .map((day) => ({
+          ...day,
+          exercises: day.exercises.map((ex) => ({
+            ...ex,
+            sets: [...ex.sets].sort((a, b) =>
+              a.key.localeCompare(b.key, undefined, { numeric: true }),
+            ),
+          })),
+        }))
+        .sort((a, b) => b.date.localeCompare(a.date));
+    },
+
     // ─── PROGRAMS ────────────────────────────────────────────
     async selectProgram(pid) {
       this.selectedProgramId = pid;
@@ -473,7 +521,7 @@ export function registerStore(Alpine) {
 
     async removeSet(eid, setIdx) {
       const ex = this.exercises.find((e) => e.id === eid);
-      if (!ex || ex.sets.length <= 1) return;
+      if (!ex || ex.sets.length <= 0) return;
       ex.sets.splice(setIdx, 1);
       ex.sets.forEach((s, i) => {
         s.key = `Set ${i + 1}`;
