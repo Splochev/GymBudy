@@ -847,7 +847,86 @@ export function registerStore(Alpine) {
       await this.persistWorkoutProgress(true);
     },
 
-    // ─── TIMERS ──────────────────────────────────────────────
+    async mergeWorkoutLogs() {
+      const { keepDate, dropDate } = this.modal.data;
+      const uid = this.user.uid;
+      const pid = this.selectedProgramId;
+      const sid = this.selectedSessionId;
+
+      const keepLog = this.workoutLogs.find(l => l.sessionId === sid && l.date === keepDate);
+      const dropLog = this.workoutLogs.find(l => l.sessionId === sid && l.date === dropDate);
+      if (!dropLog) return;
+
+      // Merge exercises: keep all from keepLog, append non-duplicate ones from dropLog
+      const mergedExercises = [...(keepLog?.exercises ?? [])];
+      for (const ex of (dropLog.exercises ?? [])) {
+        if (!mergedExercises.find(e => e.name === ex.name)) {
+          mergedExercises.push(ex);
+        }
+      }
+
+      // Upsert the keepDate log with merged exercises
+      await DB.upsertWorkoutLogByDate(uid, {
+        programId: pid,
+        programName: this.selectedProgram?.name ?? "",
+        sessionId: sid,
+        sessionName: this.selectedSession?.name ?? "",
+        date: keepDate,
+        exercises: mergedExercises,
+      });
+
+      // Delete the dropDate log from Firestore
+      const dropLogId = `${pid}__${sid}__${dropDate}`;
+      await DB.deleteWorkoutLog(uid, dropLogId);
+
+      // Update setHistory on exercise documents: rename dropDate entries to keepDate
+      const updatePromises = this.exercises.map(ex => {
+        let changed = false;
+        const updatedHistory = {};
+        for (const [setKey, entries] of Object.entries(ex.setHistory ?? {})) {
+          const renamed = (entries ?? []).map(entry => {
+            if (entry?.date === dropDate) { changed = true; return { ...entry, date: keepDate }; }
+            return entry;
+          });
+          // Deduplicate by date — first occurrence wins (preserves original keepDate data)
+          const seen = new Map();
+          for (const entry of renamed) {
+            if (entry?.date && !seen.has(entry.date)) seen.set(entry.date, entry);
+          }
+          updatedHistory[setKey] = [...seen.values()];
+        }
+        if (changed) {
+          ex.setHistory = updatedHistory;
+          return DB.saveWorkoutDraftToExercise(uid, pid, sid, ex.id, updatedHistory);
+        }
+        return Promise.resolve();
+      });
+      await Promise.all(updatePromises);
+
+      // Update local workoutLogs cache
+      const mergedEntry = {
+        ...(keepLog ?? {}),
+        programId: pid,
+        programName: this.selectedProgram?.name ?? "",
+        sessionId: sid,
+        sessionName: this.selectedSession?.name ?? "",
+        date: keepDate,
+        id: `${pid}__${sid}__${keepDate}`,
+        exercises: mergedExercises,
+      };
+      const keepIdx = this.workoutLogs.findIndex(l => l.sessionId === sid && l.date === keepDate);
+      if (keepIdx >= 0) {
+        this.workoutLogs.splice(keepIdx, 1, mergedEntry);
+      } else {
+        this.workoutLogs.unshift(mergedEntry);
+      }
+      this.workoutLogs = this.workoutLogs.filter(l => !(l.sessionId === sid && l.date === dropDate));
+
+      this.showToast("toast_logs_merged");
+      this.closeModal();
+    },
+
+
     startTimer(key, seconds) {
       if (this.activeTimers[key]) {
         clearInterval(this.activeTimers[key].intervalId);

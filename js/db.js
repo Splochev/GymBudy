@@ -214,3 +214,7 @@ export async function addWorkoutLog(uid, logData) {
   });
   return { id: ref.id, ...logData };
 }
+
+export async function deleteWorkoutLog(uid, logId) {
+  await deleteDoc(docR(`users/${uid}/workoutLogs/${logId}`));
+}

@@ -65,6 +65,12 @@ export const translations = {
     no_history_yet_desc:
       "Start logging sets in Workout mode. Entries are autosaved.",
     exercises_count: (n) => `${n} exercises`,
+    merge_logs_title: "Merge Workouts",
+    merge_logs_desc: (dropDate, keepDate) =>
+      `Merge the workout from ${dropDate} into ${keepDate}. Exercises from both days will be combined into one entry. This cannot be undone.`,
+    merge_into: (date) => `Merge into ${date}`,
+    btn_merge: "Merge",
+    toast_logs_merged: "Workouts merged!",
 
     // ── Modal titles ──────────────────────────────────────────
     new_program_title: "New Program",
@@ -252,6 +258,12 @@ export const translations = {
     no_history_yet_desc:
       "Започнете да въвеждате серии в режим Тренировка. Записът е автоматичен.",
     exercises_count: (n) => `${n} упражнения`,
+    merge_logs_title: "Обедини тренировки",
+    merge_logs_desc: (dropDate, keepDate) =>
+      `Обединяване на тренировката от ${dropDate} в ${keepDate}. Упражненията от двата дни ще бъдат комбинирани в един запис. Това не може да бъде отменено.`,
+    merge_into: (date) => `Обедини в ${date}`,
+    btn_merge: "Обедини",
+    toast_logs_merged: "Тренировките са обединени!",
 
     // ── Modal titles ──────────────────────────────────────────
     new_program_title: "Нова програма",
