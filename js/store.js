@@ -337,8 +337,14 @@ export function registerStore(Alpine) {
       this.selectedSessionId = null;
       this.exercises = [];
       this.sessions = await DB.getSessions(this.user.uid, pid);
-      if (this.sessions.length > 0)
-        await this.selectSession(this.sessions[0].id);
+      if (this.sessions.length > 0) {
+        // Try to restore the last selected session for this program
+        const lastSessionId = await DB.getLastSessionId(this.user.uid, pid);
+        const targetSession = lastSessionId && this.sessions.find(s => s.id === lastSessionId)
+          ? this.sessions.find(s => s.id === lastSessionId)
+          : this.sessions[0];
+        await this.selectSession(targetSession.id);
+      }
     },
 
     async addProgram() {
@@ -398,6 +404,10 @@ export function registerStore(Alpine) {
         this.selectedProgramId,
         sid,
       );
+      // Persist last selected session for this program
+      if (this.selectedProgramId) {
+        await DB.saveLastSessionId(this.user.uid, this.selectedProgramId, sid);
+      }
     },
 
     async addSession() {

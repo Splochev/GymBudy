@@ -218,3 +218,17 @@ export async function addWorkoutLog(uid, logData) {
 export async function deleteWorkoutLog(uid, logId) {
   await deleteDoc(docR(`users/${uid}/workoutLogs/${logId}`));
 }
+
+// ─── LAST SELECTED SESSION (per program) ──────────────────────
+// Stored as: /users/{uid}/settings/{programId} → { lastSessionId: "..." }
+
+export async function saveLastSessionId(uid, programId, sessionId) {
+  const ref = docR(`users/${uid}/settings/${programId}`);
+  await setDoc(ref, { lastSessionId: sessionId }, { merge: true });
+}
+
+export async function getLastSessionId(uid, programId) {
+  const ref = docR(`users/${uid}/settings/${programId}`);
+  const snap = await getDoc(ref);
+  return snap.exists() ? snap.data().lastSessionId : null;
+}
