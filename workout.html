@@ -2542,6 +2542,42 @@
                                 </div>
                               </div>
                               <!-- Merge into previous (older) workout -->
+                             <!-- Edit log -->
+                             <button
+                               @click.stop="$store.gym.openModal('editLog', log)"
+                               class="btn-icon"
+                               style="flex-shrink: 0; color: var(--text3)"
+                               :title="$store.gym.t('btn_edit')"
+                             >
+                               <svg
+                                 style="width: 14px; height: 14px"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="2"
+                               >
+                                 <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                                 <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                               </svg>
+                             </button>
+                             <!-- Delete log -->
+                             <button
+                               @click.stop="$store.gym.openModal('deleteLog', log.date)"
+                               class="btn-icon"
+                               style="flex-shrink: 0; color: var(--danger)"
+                               :title="$store.gym.t('btn_delete')"
+                             >
+                               <svg
+                                 style="width: 14px; height: 14px"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="2"
+                               >
+                                 <polyline points="3 6 5 6 21 6" />
+                                 <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                               </svg>
+                             </button>
                               <button
                                 x-show="logIdx < $store.gym.sessionHistory().length - 1"
                                 @click.stop="$store.gym.openModal('mergeLogs', { keepDate: $store.gym.sessionHistory()[logIdx + 1].date, dropDate: log.date })"
@@ -3239,6 +3275,136 @@
                     </svg>
                     <span x-text="$store.gym.t('btn_save_workout')"></span>
                   </button>
+                </div>
+              </div>
+
+              <!-- Delete Log -->
+              <div x-show="$store.gym.modal?.type === 'deleteLog'">
+                <h2
+                  style="
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    margin-bottom: 12px;
+                  "
+                  x-text="$store.gym.t('delete_log_title')"
+                ></h2>
+                <p
+                  style="
+                    color: var(--text2);
+                    margin-bottom: 16px;
+                    font-size: 0.9rem;
+                  "
+                  x-text="$store.gym.t('delete_log_desc', $store.gym.formatDate($store.gym.modal?.data ?? ''))"
+                ></p>
+                <div style="display: flex; justify-content: flex-end; gap: 8px">
+                  <button
+                    class="btn btn-secondary"
+                    @click="$store.gym.closeModal()"
+                    x-text="$store.gym.t('btn_cancel')"
+                  ></button>
+                  <button
+                    class="btn btn-danger"
+                    @click="$store.gym.deleteHistoryLog()"
+                    x-text="$store.gym.t('btn_delete')"
+                  ></button>
+                </div>
+              </div>
+
+              <!-- Edit Log -->
+              <div x-show="$store.gym.modal?.type === 'editLog'">
+                <h2
+                  style="
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    margin-bottom: 16px;
+                  "
+                  x-text="$store.gym.t('edit_log_title')"
+                ></h2>
+                <div style="margin-bottom: 12px">
+                  <label
+                    style="
+                      display: block;
+                      font-size: 0.8rem;
+                      color: var(--text2);
+                      margin-bottom: 4px;
+                      font-weight: 500;
+                    "
+                    x-text="$store.gym.t('label_date')"
+                  ></label>
+                  <input
+                    x-model="$store.gym.modalForm.date"
+                    style="width: 100%"
+                    disabled
+                    :value="$store.gym.formatDate($store.gym.modal?.data?.date)"
+                  />
+                </div>
+                <div style="margin-bottom: 12px">
+                  <label
+                    style="
+                      display: block;
+                      font-size: 0.8rem;
+                      color: var(--text2);
+                      margin-bottom: 4px;
+                      font-weight: 500;
+                    "
+                    x-text="$store.gym.t('label_exercises')"
+                  ></label>
+                  <div style="max-height: 300px; overflow-y: auto">
+                    <template
+                      x-for="(exercise, exIdx) in $store.gym.modal?.data?.exercises"
+                      :key="exIdx"
+                    >
+                      <div style="margin-bottom: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 4px">
+                        <div style="font-weight: 600; margin-bottom: 8px" x-text="exercise.name"></div>
+                        <template
+                          x-for="(set, setIdx) in exercise.sets"
+                          :key="setIdx"
+                        >
+                          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+                            <span style="font-size: 0.8rem; color: var(--text3); min-width: 32px" x-text="set.key"></span>
+                            <input
+                              type="number"
+                              step="0.25"
+                              :value="set.weight"
+                              @input="exercise.sets[setIdx].weight = $event.target.value"
+                              style="width: 80px; font-size: 0.85rem"
+                              :placeholder="$store.gym.t('placeholder_weight')"
+                            />
+                            <span style="font-size: 0.8rem; color: var(--text3)" x-text="$store.gym.t('kg_abbr')"></span>
+                            <span style="font-size: 0.8rem; color: var(--text3)">×</span>
+                            <input
+                              type="number"
+                              min="0"
+                              :value="set.reps"
+                              @input="exercise.sets[setIdx].reps = $event.target.value"
+                              style="width: 60px; font-size: 0.85rem"
+                              :placeholder="$store.gym.t('placeholder_reps')"
+                            />
+                            <span style="font-size: 0.8rem; color: var(--text3)" x-text="$store.gym.t('reps_abbr')"></span>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 8px;
+                    margin-top: 16px;
+                  "
+                >
+                  <button
+                    class="btn btn-secondary"
+                    @click="$store.gym.closeModal()"
+                    x-text="$store.gym.t('btn_cancel')"
+                  ></button>
+                  <button
+                    class="btn btn-primary"
+                    @click="$store.gym.saveEditedHistoryLog($store.gym.modal?.data?.date, $store.gym.modal?.data?.exercises).then(() => $store.gym.closeModal())"
+                    x-text="$store.gym.t('btn_save')"
+                  ></button>
                 </div>
               </div>
             </div>

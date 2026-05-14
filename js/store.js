@@ -847,6 +847,121 @@ export function registerStore(Alpine) {
       await this.persistWorkoutProgress(true);
     },
 
+    async deleteHistoryLog() {
+      const date = this.modal.data;
+      const uid = this.user.uid;
+      const pid = this.selectedProgramId;
+      const sid = this.selectedSessionId;
+
+      // Delete the workout log from Firestore
+      const logId = `${pid}__${sid}__${date}`;
+      await DB.deleteWorkoutLog(uid, logId);
+
+      // Remove setHistory entries for this date from all exercises
+      const updatePromises = this.exercises.map(ex => {
+        let changed = false;
+        const updatedHistory = {};
+        for (const [setKey, entries] of Object.entries(ex.setHistory ?? {})) {
+          const filtered = (entries ?? []).filter(e => e?.date !== date);
+          if (filtered.length !== (entries ?? []).length) changed = true;
+          updatedHistory[setKey] = filtered;
+        }
+        if (changed) {
+          ex.setHistory = updatedHistory;
+          return DB.saveWorkoutDraftToExercise(uid, pid, sid, ex.id, updatedHistory);
+        }
+        return Promise.resolve();
+      });
+      await Promise.all(updatePromises);
+
+      // Update local workoutLogs cache
+      this.workoutLogs = this.workoutLogs.filter(l => !(l.sessionId === sid && l.date === date));
+
+      this.showToast("toast_log_deleted");
+      this.closeModal();
+    },
+
+    async saveEditedHistoryLog(date, editedExercises) {
+      const uid = this.user.uid;
+      const pid = this.selectedProgramId;
+      const sid = this.selectedSessionId;
+
+      // Build the updated log data
+      const logExercises = editedExercises
+        .filter(ex => ex.sets.length > 0)
+        .map(ex => ({
+          name: ex.name,
+          sets: ex.sets.map(s => ({
+            key: s.key,
+            weight: parseFloat(s.weight) || 0,
+            reps: parseInt(s.reps, 10) || 0,
+          })),
+        }));
+
+      // Upsert to Firestore
+      await DB.upsertWorkoutLogByDate(uid, {
+        programId: pid,
+        programName: this.selectedProgram?.name ?? "",
+        sessionId: sid,
+        sessionName: this.selectedSession?.name ?? "",
+        date: date,
+        exercises: logExercises,
+      });
+
+      // Update setHistory on exercise docs
+      const updatePromises = this.exercises.map(ex => {
+        const editedEx = editedExercises.find(e => e.name === ex.name);
+        if (!editedEx) return Promise.resolve();
+
+        let changed = false;
+        const updatedHistory = { ...(ex.setHistory ?? {}) };
+        for (const editedSet of editedEx.sets) {
+          const setKey = editedSet.key;
+          const prev = [...(updatedHistory[setKey] ?? [])];
+          const dateIdx = prev.findIndex(e => e?.date === date);
+          const entry = {
+            weight: parseFloat(editedSet.weight) || 0,
+            reps: parseInt(editedSet.reps, 10) || 0,
+            date: date,
+          };
+          if (dateIdx >= 0) {
+            prev[dateIdx] = { ...prev[dateIdx], ...entry };
+          } else {
+            prev.push(entry);
+          }
+          updatedHistory[setKey] = prev;
+          changed = true;
+        }
+
+        if (changed) {
+          ex.setHistory = updatedHistory;
+          return DB.saveWorkoutDraftToExercise(uid, pid, sid, ex.id, updatedHistory);
+        }
+        return Promise.resolve();
+      });
+      await Promise.all(updatePromises);
+
+      // Update local workoutLogs cache
+      const logId = `${pid}__${sid}__${date}`;
+      const idx = this.workoutLogs.findIndex(l => l.id === logId);
+      const updatedLog = {
+        id: logId,
+        programId: pid,
+        programName: this.selectedProgram?.name ?? "",
+        sessionId: sid,
+        sessionName: this.selectedSession?.name ?? "",
+        date: date,
+        exercises: logExercises,
+      };
+      if (idx >= 0) {
+        this.workoutLogs.splice(idx, 1, { ...this.workoutLogs[idx], ...updatedLog });
+      } else {
+        this.workoutLogs.unshift(updatedLog);
+      }
+
+      this.showToast("toast_log_updated");
+    },
+
     async mergeWorkoutLogs() {
       const { keepDate, dropDate } = this.modal.data;
       const uid = this.user.uid;

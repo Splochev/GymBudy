@@ -71,8 +71,15 @@ export const translations = {
     merge_into: (date) => `Merge into ${date}`,
     btn_merge: "Merge",
     toast_logs_merged: "Workouts merged!",
+    delete_log_title: "Delete Workout Log",
+    delete_log_desc: (date) =>
+      `Delete the workout log from ${date}? This will also remove the set history for that date. This cannot be undone.`,
+    toast_log_deleted: "Workout log deleted",
+    toast_log_updated: "Workout log updated",
+    btn_edit: "Edit",
 
     // ── Modal titles ──────────────────────────────────────────
+    edit_log_title: "Edit Workout Log",
     new_program_title: "New Program",
     edit_program_title: "Edit Program",
     delete_program_title: "Delete Program",
@@ -100,6 +107,8 @@ export const translations = {
     label_day_name: "Day Name",
     label_video_url: "YouTube / Video URL",
     label_muscle_groups: "Muscle Groups",
+    label_date: "Date",
+    label_exercises: "Exercises",
 
     // ── Buttons ───────────────────────────────────────────────
     btn_cancel: "Cancel",
@@ -117,6 +126,8 @@ export const translations = {
     placeholder_day_name: "e.g. Push Day, Monday…",
     placeholder_exercise_name: "Exercise name",
     placeholder_video_url: "https://youtube.com/…",
+    placeholder_weight: "Weight",
+    placeholder_reps: "Reps",
 
     // ── Toast messages ────────────────────────────────────────
     toast_program_created: "Program created",
@@ -264,8 +275,15 @@ export const translations = {
     merge_into: (date) => `Обедини в ${date}`,
     btn_merge: "Обедини",
     toast_logs_merged: "Тренировките са обединени!",
+    delete_log_title: "Изтрий запис на тренировка",
+    delete_log_desc: (date) =>
+      `Изтрий записа от ${date}? Това ще премахне и историята на сериите за тази дата. Действието е необратимо.`,
+    toast_log_deleted: "Записът е изтрит",
+    toast_log_updated: "Записът е обновен",
+    btn_edit: "Редактирай",
 
     // ── Modal titles ──────────────────────────────────────────
+    edit_log_title: "Редактиране на тренировъчен запис",
     new_program_title: "Нова програма",
     edit_program_title: "Редактирай програма",
     delete_program_title: "Изтрий програма",
@@ -295,6 +313,8 @@ export const translations = {
     label_day_name: "Наименование на деня",
     label_video_url: "YouTube / Видео URL",
     label_muscle_groups: "Мускулни групи",
+    label_date: "Дата",
+    label_exercises: "Упражнения",
 
     // ── Buttons ───────────────────────────────────────────────
     btn_cancel: "Отказ",
@@ -312,6 +332,8 @@ export const translations = {
     placeholder_day_name: "напр. Ден за бутане, Понеделник…",
     placeholder_exercise_name: "Наименование на упражнението",
     placeholder_video_url: "https://youtube.com/…",
+    placeholder_weight: "Тегло",
+    placeholder_reps: "Повторения",
 
     // ── Toast messages ────────────────────────────────────────
     toast_program_created: "Програмата е създадена",
