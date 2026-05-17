@@ -69,14 +69,29 @@ export const translations = {
     merge_logs_desc: (dropDate, keepDate) =>
       `Merge the workout from ${dropDate} into ${keepDate}. Exercises from both days will be combined into one entry. This cannot be undone.`,
     merge_into: (date) => `Merge into ${date}`,
+    select_to_merge: "Select to merge",
+    merge_selected_logs_title: "Merge Selected Workouts",
+    merge_selected_logs_desc: (newerDate, olderDate) =>
+      `Merge the workouts from ${newerDate} and ${olderDate} into one entry. For duplicate exercises, the data from the newer workout (${newerDate}) takes priority. This cannot be undone.`,
     btn_merge: "Merge",
+    btn_merge_selected: "Merge Selected (2)",
     toast_logs_merged: "Workouts merged!",
+    load_as_workout: "Load as active workout",
+    toast_loaded_as_workout: "Workout loaded!",
+    select_logs_to_merge: "Select 2 workouts to merge",
     delete_log_title: "Delete Workout Log",
     delete_log_desc: (date) =>
       `Delete the workout log from ${date}? This will also remove the set history for that date. This cannot be undone.`,
     toast_log_deleted: "Workout log deleted",
     toast_log_updated: "Workout log updated",
     btn_edit: "Edit",
+
+    // ── Log actions ───────────────────────────────────────────
+    edit_log: "Edit log",
+    delete_log: "Delete log",
+    save_changes: "Save changes",
+    save: "Save",
+    cancel: "Cancel",
 
     // ── Modal titles ──────────────────────────────────────────
     edit_log_title: "Edit Workout Log",
@@ -273,14 +288,29 @@ export const translations = {
     merge_logs_desc: (dropDate, keepDate) =>
       `Обединяване на тренировката от ${dropDate} в ${keepDate}. Упражненията от двата дни ще бъдат комбинирани в един запис. Това не може да бъде отменено.`,
     merge_into: (date) => `Обедини в ${date}`,
+    select_to_merge: "Избери за обединяване",
+    merge_selected_logs_title: "Обедини избраните тренировки",
+    merge_selected_logs_desc: (newerDate, olderDate) =>
+      `Обединяване на тренировките от ${newerDate} и ${olderDate} в един запис. При дублиращи се упражнения, данните от по-новата тренировка (${newerDate}) имат приоритет. Действието е необратимо.`,
     btn_merge: "Обедини",
+    btn_merge_selected: "Обедини избраните (2)",
     toast_logs_merged: "Тренировките са обединени!",
+    load_as_workout: "Зареди като активна тренировка",
+    toast_loaded_as_workout: "Тренировката е заредена!",
+    select_logs_to_merge: "Изберете 2 тренировки за обединяване",
     delete_log_title: "Изтрий запис на тренировка",
     delete_log_desc: (date) =>
       `Изтрий записа от ${date}? Това ще премахне и историята на сериите за тази дата. Действието е необратимо.`,
     toast_log_deleted: "Записът е изтрит",
     toast_log_updated: "Записът е обновен",
     btn_edit: "Редактирай",
+
+    // ── Log actions ───────────────────────────────────────────
+    edit_log: "Редактирай запис",
+    delete_log: "Изтрий запис",
+    save_changes: "Запази промените",
+    save: "Запази",
+    cancel: "Отказ",
 
     // ── Modal titles ──────────────────────────────────────────
     edit_log_title: "Редактиране на тренировъчен запис",

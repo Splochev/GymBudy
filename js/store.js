@@ -137,6 +137,9 @@ export function registerStore(Alpine) {
     searchOpen: false,
     saveStatus: "saved", // 'saved' | 'saving'
 
+    // ── History multi-select (for merge) ─────────────────────
+    selectedLogDates: [], // up to 2 log dates selected for merging
+
     // ── Workout state ─────────────────────────────────────────
     expandedId: null, // exercise doc ID expanded in workout mode
     workoutDraft: {}, // { exerciseId: { "Set 1": { weight, reps }, ... } }
@@ -258,7 +261,133 @@ export function registerStore(Alpine) {
 
     async openHistoryMode() {
       this.mode = 'history';
+      this.selectedLogDates = [];
       await this.loadHistory();
+    },
+
+    // ─── HISTORY LOG MULTI-SELECT ────────────────────────────
+    toggleLogSelection(date) {
+      const idx = this.selectedLogDates.indexOf(date);
+      if (idx >= 0) {
+        this.selectedLogDates = this.selectedLogDates.filter(d => d !== date);
+      } else if (this.selectedLogDates.length < 2) {
+        this.selectedLogDates = [...this.selectedLogDates, date];
+      } else {
+        // Already 2 selected — replace the older selection with the new one
+        this.selectedLogDates = [this.selectedLogDates[1], date];
+      }
+    },
+
+    isLogSelected(date) {
+      return this.selectedLogDates.includes(date);
+    },
+
+    openMergeSelectedLogsModal() {
+      if (this.selectedLogDates.length !== 2) return;
+      // Sort so newerDate > olderDate
+      const sorted = [...this.selectedLogDates].sort((a, b) => b.localeCompare(a));
+      const newerDate = sorted[0];
+      const olderDate = sorted[1];
+      this.openModal('mergeSelectedLogs', { newerDate, olderDate });
+    },
+
+    // Alias called from the HTML modal button
+    async mergeSelectedLogs() {
+      return this.mergeSelectedWorkoutLogs();
+    },
+
+    async mergeSelectedWorkoutLogs() {
+      const { newerDate, olderDate } = this.modal.data;
+      const uid = this.user.uid;
+      const pid = this.selectedProgramId;
+      const sid = this.selectedSessionId;
+
+      const newerLog = this.workoutLogs.find(l => l.sessionId === sid && l.date === newerDate);
+      const olderLog = this.workoutLogs.find(l => l.sessionId === sid && l.date === olderDate);
+
+      // Merge exercises: newer log takes priority on duplicates
+      // Start with newer log's exercises, then append unique ones from older log
+      const mergedExercises = [...(newerLog?.exercises ?? [])];
+      for (const ex of (olderLog?.exercises ?? [])) {
+        if (!mergedExercises.find(e => e.name === ex.name)) {
+          mergedExercises.push(ex);
+        }
+      }
+
+      // Upsert the newerDate log with merged exercises (keep the newer date)
+      await DB.upsertWorkoutLogByDate(uid, {
+        programId: pid,
+        programName: this.selectedProgram?.name ?? "",
+        sessionId: sid,
+        sessionName: this.selectedSession?.name ?? "",
+        date: newerDate,
+        exercises: mergedExercises,
+      });
+
+      // Delete the olderDate log from Firestore
+      const olderLogId = `${pid}__${sid}__${olderDate}`;
+      await DB.deleteWorkoutLog(uid, olderLogId);
+
+      // Update setHistory on exercise documents:
+      // For each set key, if both dates have entries, keep the newer date's entry.
+      // Rename olderDate entries to newerDate only if newerDate has no entry for that set.
+      const updatePromises = this.exercises.map(ex => {
+        let changed = false;
+        const updatedHistory = {};
+        for (const [setKey, entries] of Object.entries(ex.setHistory ?? {})) {
+          const allEntries = entries ?? [];
+          const newerEntry = allEntries.find(e => e?.date === newerDate);
+          const olderEntry = allEntries.find(e => e?.date === olderDate);
+
+          let newEntries;
+          if (olderEntry) {
+            changed = true;
+            if (newerEntry) {
+              // Both exist — drop the older one (newer takes priority)
+              newEntries = allEntries.filter(e => e?.date !== olderDate);
+            } else {
+              // Only older exists — rename it to newerDate
+              newEntries = allEntries.map(e =>
+                e?.date === olderDate ? { ...e, date: newerDate } : e
+              );
+            }
+          } else {
+            newEntries = allEntries;
+          }
+          updatedHistory[setKey] = newEntries;
+        }
+        if (changed) {
+          ex.setHistory = updatedHistory;
+          return DB.saveWorkoutDraftToExercise(uid, pid, sid, ex.id, updatedHistory);
+        }
+        return Promise.resolve();
+      });
+      await Promise.all(updatePromises);
+
+      // Update local workoutLogs cache
+      const mergedEntry = {
+        ...(newerLog ?? {}),
+        programId: pid,
+        programName: this.selectedProgram?.name ?? "",
+        sessionId: sid,
+        sessionName: this.selectedSession?.name ?? "",
+        date: newerDate,
+        id: `${pid}__${sid}__${newerDate}`,
+        exercises: mergedExercises,
+      };
+      const newerIdx = this.workoutLogs.findIndex(l => l.sessionId === sid && l.date === newerDate);
+      if (newerIdx >= 0) {
+        this.workoutLogs.splice(newerIdx, 1, mergedEntry);
+      } else {
+        this.workoutLogs.unshift(mergedEntry);
+      }
+      this.workoutLogs = this.workoutLogs.filter(l => !(l.sessionId === sid && l.date === olderDate));
+
+      // Clear selection
+      this.selectedLogDates = [];
+
+      this.showToast("toast_logs_merged");
+      this.closeModal();
     },
 
     sessionLogs() {
@@ -318,17 +447,53 @@ export function registerStore(Alpine) {
         }
       }
 
+      // Build an exercise-name → program order map from the current session
+      const programOrder = new Map();
+      for (const ex of this.exercises) {
+        programOrder.set(ex.name, ex.order ?? 0);
+      }
+
       return [...byDate.values()]
         .map((day) => ({
           ...day,
-          exercises: day.exercises.map((ex) => ({
-            ...ex,
-            sets: [...ex.sets].sort((a, b) =>
-              a.key.localeCompare(b.key, undefined, { numeric: true }),
-            ),
-          })),
+          exercises: day.exercises
+            .map((ex) => ({
+              ...ex,
+              sets: [...ex.sets].sort((a, b) =>
+                a.key.localeCompare(b.key, undefined, { numeric: true }),
+              ),
+            }))
+            .sort((a, b) => {
+              const oa = programOrder.has(a.name) ? programOrder.get(a.name) : Infinity;
+              const ob = programOrder.has(b.name) ? programOrder.get(b.name) : Infinity;
+              return oa - ob;
+            }),
         }))
         .sort((a, b) => b.date.localeCompare(a.date));
+    },
+
+    loadHistoryLogAsWorkout(date) {
+      const historyDay = this.sessionHistory().find((d) => d.date === date);
+      if (!historyDay) return;
+
+      const newDraft = {};
+      for (const logEx of historyDay.exercises) {
+        const programEx = this.exercises.find((e) => e.name === logEx.name);
+        if (!programEx) continue;
+        newDraft[programEx.id] = {};
+        for (const set of logEx.sets) {
+          newDraft[programEx.id][set.key] = {
+            weight: set.weight ?? "",
+            reps: set.reps ?? "",
+          };
+        }
+      }
+
+      this.workoutDraft = newDraft;
+      this._persistDraft();
+      this.mode = "workout";
+      this.view = "workout";
+      this.showToast("toast_loaded_as_workout");
     },
 
     // ─── PROGRAMS ────────────────────────────────────────────
@@ -857,40 +1022,6 @@ export function registerStore(Alpine) {
       await this.persistWorkoutProgress(true);
     },
 
-    async deleteHistoryLog() {
-      const date = this.modal.data;
-      const uid = this.user.uid;
-      const pid = this.selectedProgramId;
-      const sid = this.selectedSessionId;
-
-      // Delete the workout log from Firestore
-      const logId = `${pid}__${sid}__${date}`;
-      await DB.deleteWorkoutLog(uid, logId);
-
-      // Remove setHistory entries for this date from all exercises
-      const updatePromises = this.exercises.map(ex => {
-        let changed = false;
-        const updatedHistory = {};
-        for (const [setKey, entries] of Object.entries(ex.setHistory ?? {})) {
-          const filtered = (entries ?? []).filter(e => e?.date !== date);
-          if (filtered.length !== (entries ?? []).length) changed = true;
-          updatedHistory[setKey] = filtered;
-        }
-        if (changed) {
-          ex.setHistory = updatedHistory;
-          return DB.saveWorkoutDraftToExercise(uid, pid, sid, ex.id, updatedHistory);
-        }
-        return Promise.resolve();
-      });
-      await Promise.all(updatePromises);
-
-      // Update local workoutLogs cache
-      this.workoutLogs = this.workoutLogs.filter(l => !(l.sessionId === sid && l.date === date));
-
-      this.showToast("toast_log_deleted");
-      this.closeModal();
-    },
-
     async saveEditedHistoryLog(date, editedExercises) {
       const uid = this.user.uid;
       const pid = this.selectedProgramId;
@@ -971,86 +1102,6 @@ export function registerStore(Alpine) {
 
       this.showToast("toast_log_updated");
     },
-
-    async mergeWorkoutLogs() {
-      const { keepDate, dropDate } = this.modal.data;
-      const uid = this.user.uid;
-      const pid = this.selectedProgramId;
-      const sid = this.selectedSessionId;
-
-      const keepLog = this.workoutLogs.find(l => l.sessionId === sid && l.date === keepDate);
-      const dropLog = this.workoutLogs.find(l => l.sessionId === sid && l.date === dropDate);
-      if (!dropLog) return;
-
-      // Merge exercises: keep all from keepLog, append non-duplicate ones from dropLog
-      const mergedExercises = [...(keepLog?.exercises ?? [])];
-      for (const ex of (dropLog.exercises ?? [])) {
-        if (!mergedExercises.find(e => e.name === ex.name)) {
-          mergedExercises.push(ex);
-        }
-      }
-
-      // Upsert the keepDate log with merged exercises
-      await DB.upsertWorkoutLogByDate(uid, {
-        programId: pid,
-        programName: this.selectedProgram?.name ?? "",
-        sessionId: sid,
-        sessionName: this.selectedSession?.name ?? "",
-        date: keepDate,
-        exercises: mergedExercises,
-      });
-
-      // Delete the dropDate log from Firestore
-      const dropLogId = `${pid}__${sid}__${dropDate}`;
-      await DB.deleteWorkoutLog(uid, dropLogId);
-
-      // Update setHistory on exercise documents: rename dropDate entries to keepDate
-      const updatePromises = this.exercises.map(ex => {
-        let changed = false;
-        const updatedHistory = {};
-        for (const [setKey, entries] of Object.entries(ex.setHistory ?? {})) {
-          const renamed = (entries ?? []).map(entry => {
-            if (entry?.date === dropDate) { changed = true; return { ...entry, date: keepDate }; }
-            return entry;
-          });
-          // Deduplicate by date — first occurrence wins (preserves original keepDate data)
-          const seen = new Map();
-          for (const entry of renamed) {
-            if (entry?.date && !seen.has(entry.date)) seen.set(entry.date, entry);
-          }
-          updatedHistory[setKey] = [...seen.values()];
-        }
-        if (changed) {
-          ex.setHistory = updatedHistory;
-          return DB.saveWorkoutDraftToExercise(uid, pid, sid, ex.id, updatedHistory);
-        }
-        return Promise.resolve();
-      });
-      await Promise.all(updatePromises);
-
-      // Update local workoutLogs cache
-      const mergedEntry = {
-        ...(keepLog ?? {}),
-        programId: pid,
-        programName: this.selectedProgram?.name ?? "",
-        sessionId: sid,
-        sessionName: this.selectedSession?.name ?? "",
-        date: keepDate,
-        id: `${pid}__${sid}__${keepDate}`,
-        exercises: mergedExercises,
-      };
-      const keepIdx = this.workoutLogs.findIndex(l => l.sessionId === sid && l.date === keepDate);
-      if (keepIdx >= 0) {
-        this.workoutLogs.splice(keepIdx, 1, mergedEntry);
-      } else {
-        this.workoutLogs.unshift(mergedEntry);
-      }
-      this.workoutLogs = this.workoutLogs.filter(l => !(l.sessionId === sid && l.date === dropDate));
-
-      this.showToast("toast_logs_merged");
-      this.closeModal();
-    },
-
 
     startTimer(key, seconds) {
       if (this.activeTimers[key]) {

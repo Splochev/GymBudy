@@ -2446,6 +2446,22 @@
                       x-if="$store.gym.selectedSessionId && $store.gym.mode === 'history'"
                     >
                       <div>
+                        <!-- Merge selected bar — shown when 2 logs are checked -->
+                        <template x-if="$store.gym.selectedLogDates.length === 2">
+                          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;margin-bottom:12px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:var(--radius)">
+                            <svg style="width:15px;height:15px;color:var(--accent);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M8 18L5 21l-3-3"/><path d="M5 21V3"/><path d="M16 6l3-3 3 3"/><path d="M19 3v18"/><path d="M5 12h14"/>
+                            </svg>
+                            <span style="flex:1;font-size:0.85rem;color:var(--accent);font-weight:500" x-text="$store.gym.t('merge_selected_logs_title')"></span>
+                            <button class="btn btn-primary btn-sm" @click="$store.gym.openMergeSelectedLogsModal()">
+                              <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M8 18L5 21l-3-3"/><path d="M5 21V3"/><path d="M16 6l3-3 3 3"/><path d="M19 3v18"/><path d="M5 12h14"/>
+                              </svg>
+                              <span x-text="$store.gym.t('btn_merge_selected')"></span>
+                            </button>
+                            <button class="btn btn-secondary btn-sm" @click="$store.gym.selectedLogDates = []" x-text="$store.gym.t('btn_cancel')"></button>
+                          </div>
+                        </template>
                         <div
                           x-show="!$store.gym.sessionHistory().length"
                           class="empty-state"
@@ -2509,73 +2525,63 @@
                                 </div>
                               </div>
                               <template x-if="!editing">
-                                <!-- Edit button -->
-                                <button
-                                  @click.stop="editing = true"
-                                  class="btn-icon"
-                                  style="flex-shrink: 0; color: var(--text3); margin-right: 8px"
-                                  :title="$store.gym.t('edit_log')"
-                                >
+                                <div style="display: flex; align-items: center; flex-shrink: 0">
+                                  <!-- Select checkbox for multi-merge -->
+                                  <input
+                                    type="checkbox"
+                                    :checked="$store.gym.isLogSelected(log.date)"
+                                    @click.stop="$store.gym.toggleLogSelection(log.date)"
+                                    style="width:15px;height:15px;flex-shrink:0;margin-right:8px;cursor:pointer"
+                                    :title="$store.gym.t('select_to_merge')"
+                                  />
+                                  <!-- Load as workout button -->
+                                  <button
+                                    @click.stop="$store.gym.loadHistoryLogAsWorkout(log.date)"
+                                    class="btn-icon"
+                                    style="flex-shrink: 0; color: var(--text3); margin-right: 8px"
+                                    :title="$store.gym.t('load_as_workout')"
+                                  >
+                                    <svg
+                                      style="width: 15px; height: 15px"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                    >
+                                      <polyline points="17 1 21 5 17 9" />
+                                      <path d="M3 11V9a4 4 0 014-4h14" />
+                                      <polyline points="7 23 3 19 7 15" />
+                                      <path d="M21 13v2a4 4 0 01-4 4H3" />
+                                    </svg>
+                                  </button>
+                                  <!-- Edit button -->
+                                  <button
+                                    @click.stop="editing = true"
+                                    class="btn-icon"
+                                    style="flex-shrink: 0; color: var(--text3); margin-right: 8px"
+                                    :title="$store.gym.t('edit_log')"
+                                  >
+                                    <svg
+                                      style="width: 15px; height: 15px"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                    >
+                                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                    </svg>
+                                  </button>
                                   <svg
-                                    style="width: 15px; height: 15px"
+                                    :style="'width:16px;height:16px;transition:transform .2s;color:var(--text3);flex-shrink:0;' + (open ? 'transform:rotate(180deg)' : '')"
                                     viewBox="0 0 24 24"
                                     fill="none"
                                     stroke="currentColor"
                                     stroke-width="2"
                                   >
-                                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                    <path d="M6 9l6 6 6-6" />
                                   </svg>
-                                </button>
-                                <!-- Delete button -->
-                                <button
-                                  @click.stop="$store.gym.openModal('deleteLog', log.date)"
-                                  class="btn-icon"
-                                  style="flex-shrink: 0; color: var(--danger); margin-right: 8px"
-                                  :title="$store.gym.t('delete_log')"
-                                >
-                                  <svg
-                                    style="width: 15px; height: 15px"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                  >
-                                    <polyline points="3 6 5 6 21 6" />
-                                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                                  </svg>
-                                </button>
-                                <!-- Merge into previous (older) workout -->
-                                <button
-                                  x-show="logIdx < $store.gym.sessionHistory().length - 1"
-                                  @click.stop="$store.gym.openModal('mergeLogs', { keepDate: $store.gym.sessionHistory()[logIdx + 1].date, dropDate: log.date })"
-                                  class="btn-icon"
-                                  style="flex-shrink: 0; color: var(--text3)"
-                                  :title="$store.gym.t('merge_into', $store.gym.formatDate($store.gym.sessionHistory()[logIdx + 1]?.date ?? ''))"
-                                >
-                                  <svg
-                                    style="width: 15px; height: 15px"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                  >
-                                    <path d="M8 18L5 21l-3-3" />
-                                    <path d="M5 21V3" />
-                                    <path d="M16 6l3-3 3 3" />
-                                    <path d="M19 3v18" />
-                                    <path d="M5 12h14" />
-                                  </svg>
-                                </button>
-                                <svg
-                                  :style="'width:16px;height:16px;transition:transform .2s;color:var(--text3);flex-shrink:0;' + (open ? 'transform:rotate(180deg)' : '')"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  stroke-width="2"
-                                >
-                                  <path d="M6 9l6 6 6-6" />
-                                </svg>
+                                </div>
                               </template>
                               <template x-if="editing">
                                 <button
@@ -3227,23 +3233,15 @@
                 </div>
               </div>
 
-              <!-- Merge Logs -->
-              <div x-show="$store.gym.modal?.type === 'mergeLogs'">
+              <!-- Merge Selected Logs -->
+              <div x-show="$store.gym.modal?.type === 'mergeSelectedLogs'">
                 <h2
-                  style="
-                    font-size: 1.1rem;
-                    font-weight: 700;
-                    margin-bottom: 8px;
-                  "
+                  style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;"
                   x-text="$store.gym.t('merge_logs_title')"
                 ></h2>
                 <p
-                  style="
-                    color: var(--text2);
-                    font-size: 0.9rem;
-                    margin-bottom: 16px;
-                  "
-                  x-text="$store.gym.t('merge_logs_desc', $store.gym.formatDate($store.gym.modal?.data?.dropDate ?? ''), $store.gym.formatDate($store.gym.modal?.data?.keepDate ?? ''))"
+                  style="color: var(--text2); font-size: 0.9rem; margin-bottom: 16px;"
+                  x-text="$store.gym.t('merge_selected_logs_desc', $store.gym.formatDate($store.gym.modal?.data?.newerDate ?? ''), $store.gym.formatDate($store.gym.modal?.data?.olderDate ?? ''))"
                 ></p>
                 <div style="display: flex; justify-content: flex-end; gap: 8px">
                   <button
@@ -3253,15 +3251,9 @@
                   ></button>
                   <button
                     class="btn btn-primary"
-                    @click="$store.gym.mergeWorkoutLogs()"
+                    @click="$store.gym.mergeSelectedLogs()"
                   >
-                    <svg
-                      style="width: 13px; height: 13px"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
+                    <svg style="width: 13px; height: 13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M8 18L5 21l-3-3" />
                       <path d="M5 21V3" />
                       <path d="M16 6l3-3 3 3" />
