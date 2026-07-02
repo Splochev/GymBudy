@@ -159,10 +159,12 @@
       import Alpine from "https://cdn.jsdelivr.net/npm/alpinejs@3/dist/module.esm.js";
       import { auth } from "./js/firebase.js";
       import { translations } from "./js/i18n.js";
+      import { friendlyAuthError } from "https://splochev.github.io/personalBudy/js/shared-utils.js";
       import {
         signInWithEmailAndPassword,
         onAuthStateChanged,
       } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+      window.friendlyAuthError = friendlyAuthError;
 
       // If already logged in, go straight to workout page
       onAuthStateChanged(auth, (user) => {
@@ -198,22 +200,10 @@
             await signInWithEmailAndPassword(auth, this.email, this.password);
             window.location.href = "./workout.html";
           } catch (e) {
-            this.error = this._friendly(e.code);
+            this.error = window.friendlyAuthError(e.code, this.t.bind(this));
           } finally {
             this.loading = false;
           }
-        },
-
-        _friendly(code) {
-          const map = {
-            "auth/user-not-found": this.t("error_user_not_found"),
-            "auth/wrong-password": this.t("error_wrong_password"),
-            "auth/invalid-credential": this.t("error_invalid_credential"),
-            "auth/email-already-in-use": this.t("error_email_in_use"),
-            "auth/too-many-requests": this.t("error_too_many_requests"),
-            "auth/network-request-failed": this.t("error_network"),
-          };
-          return map[code] ?? this.t("error_generic");
         },
       }));
 

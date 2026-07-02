@@ -207,14 +207,6 @@ export async function upsertWorkoutLogByDate(uid, logData) {
   return { id: logId, ...logData };
 }
 
-export async function addWorkoutLog(uid, logData) {
-  const ref = await addDoc(col(`users/${uid}/workoutLogs`), {
-    ...logData,
-    loggedAt: serverTimestamp(),
-  });
-  return { id: ref.id, ...logData };
-}
-
 export async function deleteWorkoutLog(uid, logId) {
   await deleteDoc(docR(`users/${uid}/workoutLogs/${logId}`));
 }

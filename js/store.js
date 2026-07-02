@@ -121,6 +121,7 @@ export function registerStore(Alpine) {
     sidebarOpen: true,
 
     // ── Data ─────────────────────────────────────────────────
+    error: '',
     programs: [],
     selectedProgramId: null,
     sessions: [],
@@ -219,6 +220,20 @@ export function registerStore(Alpine) {
 
     // ─── INIT ────────────────────────────────────────────────
     async init() {
+      // Clean up draft keys older than 7 days
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 7);
+      for (const key of Object.keys(localStorage)) {
+        if (!key.startsWith('gymbuddy-draft-')) continue;
+        // Key format: gymbuddy-draft-{sessionId}-{YYYY-MM-DD}
+        // The date is always the last 10 characters (YYYY-MM-DD)
+        const dateStr = key.slice(-10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          const keyDate = new Date(dateStr + 'T00:00:00');
+          if (keyDate < cutoff) localStorage.removeItem(key);
+        }
+      }
+
       onAuthStateChanged(auth, async (user) => {
         if (!user) {
           window.location.href = "./index.html";
@@ -231,18 +246,28 @@ export function registerStore(Alpine) {
     },
 
     async loadInitialData() {
-      const [programs, globalExercises] = await Promise.all([
-        DB.getPrograms(this.user.uid),
-        DB.getGlobalExercises(),
-      ]);
-      this.programs = programs;
-      this.globalExercises = globalExercises;
-      if (programs.length > 0) await this.selectProgram(programs[0].id);
+      try {
+        const [programs, globalExercises] = await Promise.all([
+          DB.getPrograms(this.user.uid),
+          DB.getGlobalExercises(),
+        ]);
+        this.programs = programs;
+        this.globalExercises = globalExercises;
+        if (programs.length > 0) await this.selectProgram(programs[0].id);
+      } catch (e) {
+        this.error = 'Failed to load data. Please refresh the page.';
+        console.error('loadInitialData failed:', e);
+      }
     },
 
     async logout() {
-      await signOut(auth);
-      window.location.href = "./index.html";
+      try {
+        await signOut(auth);
+        window.location.href = "./index.html";
+      } catch (e) {
+        console.error('Logout failed:', e);
+        this.showToast('toast_logout_failed', 'error');
+      }
     },
 
     // ─── NAVIGATION ──────────────────────────────────────────
