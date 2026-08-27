@@ -260,6 +260,9 @@ input[type="checkbox"] {
 .sidebar-item:hover .item-actions {
   opacity: 1;
 }
+.sidebar-item.dragging {
+  opacity: 0.5;
+}
 
 /* ── EXERCISE CARDS (config mode) ────────────────────────────── */
 .ex-card {

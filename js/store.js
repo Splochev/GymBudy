@@ -134,6 +134,7 @@ export function registerStore(Alpine) {
     // ── Config state ─────────────────────────────────────────
     mergeSet: [], // exercise IDs staged for superset merge
     dragIdx: null, // index of the item being dragged
+    sessionDragIdx: null, // index of the workout day being dragged
     searchQuery: "",
     searchOpen: false,
     saveStatus: "saved", // 'saved' | 'saving'
@@ -669,6 +670,34 @@ export function registerStore(Alpine) {
       }
       this.showToast("toast_day_deleted");
       this.closeModal();
+    },
+
+    // ─── SESSION DRAG AND DROP (reorder workout days) ────────
+    onSessionDragStart(idx) {
+      this.sessionDragIdx = idx;
+    },
+    onSessionDragOver(idx) {
+      if (this.sessionDragIdx === null || this.sessionDragIdx === idx) return;
+      const list = [...this.sessions];
+      const [moved] = list.splice(this.sessionDragIdx, 1);
+      list.splice(idx, 0, moved);
+      list.forEach((s, i) => (s.order = i));
+      this.sessions = list;
+      this.sessionDragIdx = idx;
+    },
+    async onSessionDrop() {
+      this.sessionDragIdx = null;
+      await this._batchSaveSessionOrder();
+    },
+
+    async _batchSaveSessionOrder() {
+      this.saveStatus = "saving";
+      await DB.batchReorderSessions(
+        this.user.uid,
+        this.selectedProgramId,
+        this.sessions,
+      );
+      this.saveStatus = "saved";
     },
 
     // ─── EXERCISES ───────────────────────────────────────────

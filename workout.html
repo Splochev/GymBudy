@@ -822,12 +822,16 @@
                 </div>
                 <div style="flex: 1; overflow-y: auto; padding: 0 8px 8px">
                   <template
-                    x-for="session in $store.gym.sessions"
+                    x-for="(session, sIdx) in $store.gym.sessions"
                     :key="session.id"
                   >
                     <div
                       class="sidebar-item"
-                      :class="{ active: $store.gym.selectedSessionId === session.id }"
+                      :class="{ active: $store.gym.selectedSessionId === session.id, dragging: $store.gym.sessionDragIdx === sIdx }"
+                      draggable="true"
+                      @dragstart="$store.gym.onSessionDragStart(sIdx)"
+                      @dragover.prevent="$store.gym.onSessionDragOver(sIdx)"
+                      @drop.prevent="$store.gym.onSessionDrop()"
                       @click="$store.gym.selectSession(session.id); if(window.innerWidth<=600) $store.gym.sidebarOpen=false"
                     >
                       <span
