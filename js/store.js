@@ -659,6 +659,32 @@ export function registerStore(Alpine) {
       this.closeModal();
     },
 
+    async duplicateSession(sid) {
+      const uid = this.user.uid;
+      const pid = this.selectedProgramId;
+      const source = this.sessions.find((x) => x.id === sid);
+      if (!source) return;
+
+      const order = this.sessions.length;
+      const newSession = await DB.addSession(uid, pid, {
+        name: `${source.name} (Copy)`,
+        order,
+      });
+
+      const sourceExercises = await DB.getSessionExercises(uid, pid, sid);
+      for (const ex of sourceExercises) {
+        const { id, ...data } = ex;
+        await DB.addSessionExercise(uid, pid, newSession.id, {
+          ...data,
+          setHistory: {},
+        });
+      }
+
+      this.sessions.push(newSession);
+      await this.selectSession(newSession.id);
+      this.showToast("toast_day_duplicated");
+    },
+
     async deleteSession() {
       const sid = this.modal.data;
       await DB.deleteSession(this.user.uid, this.selectedProgramId, sid);
