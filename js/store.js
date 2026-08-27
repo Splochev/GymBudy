@@ -567,6 +567,37 @@ export function registerStore(Alpine) {
       this.closeModal();
     },
 
+    async duplicateProgram(pid) {
+      const uid = this.user.uid;
+      const source = this.programs.find((x) => x.id === pid);
+      if (!source) return;
+
+      const newProgram = await DB.addProgram(uid, {
+        name: `${source.name} (Copy)`,
+        description: source.description ?? "",
+      });
+
+      const sessions = await DB.getSessions(uid, pid);
+      for (const session of sessions) {
+        const newSession = await DB.addSession(uid, newProgram.id, {
+          name: session.name,
+          order: session.order,
+        });
+        const sessionExercises = await DB.getSessionExercises(uid, pid, session.id);
+        for (const ex of sessionExercises) {
+          const { id, ...data } = ex;
+          await DB.addSessionExercise(uid, newProgram.id, newSession.id, {
+            ...data,
+            setHistory: {},
+          });
+        }
+      }
+
+      this.programs.push(newProgram);
+      await this.selectProgram(newProgram.id);
+      this.showToast("toast_program_duplicated");
+    },
+
     async deleteProgram() {
       const pid = this.modal.data;
       await DB.deleteProgram(this.user.uid, pid);
