@@ -121,6 +121,7 @@ export function registerStore(Alpine) {
     sidebarOpen: true,
 
     // ── Data ─────────────────────────────────────────────────
+    error: '',
     programs: [],
     selectedProgramId: null,
     sessions: [],
@@ -133,6 +134,7 @@ export function registerStore(Alpine) {
     // ── Config state ─────────────────────────────────────────
     mergeSet: [], // exercise IDs staged for superset merge
     dragIdx: null, // index of the item being dragged
+    sessionDragIdx: null, // index of the workout day being dragged
     searchQuery: "",
     searchOpen: false,
     saveStatus: "saved", // 'saved' | 'saving'
@@ -219,6 +221,20 @@ export function registerStore(Alpine) {
 
     // ─── INIT ────────────────────────────────────────────────
     async init() {
+      // Clean up draft keys older than 7 days
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 7);
+      for (const key of Object.keys(localStorage)) {
+        if (!key.startsWith('gymbuddy-draft-')) continue;
+        // Key format: gymbuddy-draft-{sessionId}-{YYYY-MM-DD}
+        // The date is always the last 10 characters (YYYY-MM-DD)
+        const dateStr = key.slice(-10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          const keyDate = new Date(dateStr + 'T00:00:00');
+          if (keyDate < cutoff) localStorage.removeItem(key);
+        }
+      }
+
       onAuthStateChanged(auth, async (user) => {
         if (!user) {
           window.location.href = "./index.html";
@@ -231,18 +247,28 @@ export function registerStore(Alpine) {
     },
 
     async loadInitialData() {
-      const [programs, globalExercises] = await Promise.all([
-        DB.getPrograms(this.user.uid),
-        DB.getGlobalExercises(),
-      ]);
-      this.programs = programs;
-      this.globalExercises = globalExercises;
-      if (programs.length > 0) await this.selectProgram(programs[0].id);
+      try {
+        const [programs, globalExercises] = await Promise.all([
+          DB.getPrograms(this.user.uid),
+          DB.getGlobalExercises(),
+        ]);
+        this.programs = programs;
+        this.globalExercises = globalExercises;
+        if (programs.length > 0) await this.selectProgram(programs[0].id);
+      } catch (e) {
+        this.error = 'Failed to load data. Please refresh the page.';
+        console.error('loadInitialData failed:', e);
+      }
     },
 
     async logout() {
-      await signOut(auth);
-      window.location.href = "./index.html";
+      try {
+        await signOut(auth);
+        window.location.href = "./index.html";
+      } catch (e) {
+        console.error('Logout failed:', e);
+        this.showToast('toast_logout_failed', 'error');
+      }
     },
 
     // ─── NAVIGATION ──────────────────────────────────────────
@@ -542,6 +568,37 @@ export function registerStore(Alpine) {
       this.closeModal();
     },
 
+    async duplicateProgram(pid) {
+      const uid = this.user.uid;
+      const source = this.programs.find((x) => x.id === pid);
+      if (!source) return;
+
+      const newProgram = await DB.addProgram(uid, {
+        name: `${source.name} (Copy)`,
+        description: source.description ?? "",
+      });
+
+      const sessions = await DB.getSessions(uid, pid);
+      for (const session of sessions) {
+        const newSession = await DB.addSession(uid, newProgram.id, {
+          name: session.name,
+          order: session.order,
+        });
+        const sessionExercises = await DB.getSessionExercises(uid, pid, session.id);
+        for (const ex of sessionExercises) {
+          const { id, ...data } = ex;
+          await DB.addSessionExercise(uid, newProgram.id, newSession.id, {
+            ...data,
+            setHistory: {},
+          });
+        }
+      }
+
+      this.programs.push(newProgram);
+      await this.selectProgram(newProgram.id);
+      this.showToast("toast_program_duplicated");
+    },
+
     async deleteProgram() {
       const pid = this.modal.data;
       await DB.deleteProgram(this.user.uid, pid);
@@ -602,6 +659,32 @@ export function registerStore(Alpine) {
       this.closeModal();
     },
 
+    async duplicateSession(sid) {
+      const uid = this.user.uid;
+      const pid = this.selectedProgramId;
+      const source = this.sessions.find((x) => x.id === sid);
+      if (!source) return;
+
+      const order = this.sessions.length;
+      const newSession = await DB.addSession(uid, pid, {
+        name: `${source.name} (Copy)`,
+        order,
+      });
+
+      const sourceExercises = await DB.getSessionExercises(uid, pid, sid);
+      for (const ex of sourceExercises) {
+        const { id, ...data } = ex;
+        await DB.addSessionExercise(uid, pid, newSession.id, {
+          ...data,
+          setHistory: {},
+        });
+      }
+
+      this.sessions.push(newSession);
+      await this.selectSession(newSession.id);
+      this.showToast("toast_day_duplicated");
+    },
+
     async deleteSession() {
       const sid = this.modal.data;
       await DB.deleteSession(this.user.uid, this.selectedProgramId, sid);
@@ -613,6 +696,34 @@ export function registerStore(Alpine) {
       }
       this.showToast("toast_day_deleted");
       this.closeModal();
+    },
+
+    // ─── SESSION DRAG AND DROP (reorder workout days) ────────
+    onSessionDragStart(idx) {
+      this.sessionDragIdx = idx;
+    },
+    onSessionDragOver(idx) {
+      if (this.sessionDragIdx === null || this.sessionDragIdx === idx) return;
+      const list = [...this.sessions];
+      const [moved] = list.splice(this.sessionDragIdx, 1);
+      list.splice(idx, 0, moved);
+      list.forEach((s, i) => (s.order = i));
+      this.sessions = list;
+      this.sessionDragIdx = idx;
+    },
+    async onSessionDrop() {
+      this.sessionDragIdx = null;
+      await this._batchSaveSessionOrder();
+    },
+
+    async _batchSaveSessionOrder() {
+      this.saveStatus = "saving";
+      await DB.batchReorderSessions(
+        this.user.uid,
+        this.selectedProgramId,
+        this.sessions,
+      );
+      this.saveStatus = "saved";
     },
 
     // ─── EXERCISES ───────────────────────────────────────────

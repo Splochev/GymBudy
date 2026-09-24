@@ -122,7 +122,7 @@
             <!-- Navigation tabs -->
             <nav style="display: flex; gap: 4px; margin-left: 8px">
               <a
-                href="https://splochev.github.io/DietBudy/food-manager.html"
+                href="https://splochev.github.io/personalBudy/"
                 style="
                   display: flex;
                   align-items: center;
@@ -151,15 +151,53 @@
                   stroke="currentColor"
                   stroke-width="2"
                 >
-                  <line x1="6" y1="2" x2="6" y2="9" />
-                  <line x1="9" y1="2" x2="9" y2="9" />
-                  <path d="M6 9 Q7.5 12 9 9" />
-                  <line x1="7.5" y1="12" x2="7.5" y2="22" />
-                  <ellipse cx="16.5" cy="6" rx="2.5" ry="4" />
-                  <line x1="16.5" y1="10" x2="16.5" y2="22" />
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                <span>Home / Начало</span>
+              </a>
+              <a
+                href="https://splochev.github.io/budgetBuddy/budget.html"
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                  padding: 8px 14px;
+                  border-radius: 4px;
+                  font-size: 0.8rem;
+                  font-weight: 500;
+                  color: var(--text3);
+                  text-decoration: none;
+                  transition: var(--trans);
+                "
+                onmouseover="
+                  this.style.color = 'var(--text)';
+                  this.style.background = 'var(--surface2)';
+                "
+                onmouseout="
+                  this.style.color = 'var(--text3)';
+                  this.style.background = 'transparent';
+                "
+              >
+                <svg
+                  style="width: 14px; height: 14px; flex-shrink: 0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="2" y="6" width="20" height="14" rx="2"></rect>
+                  <path d="M2 10h20"></path>
+                  <circle
+                    cx="16"
+                    cy="16"
+                    r="1.5"
+                    fill="currentColor"
+                    stroke="none"
+                  ></circle>
                 </svg>
                 <span
-                  x-text="$store.gym.lang === 'bg' ? 'Храни' : 'Foods'"
+                  x-text="$store.gym.lang === 'bg' ? 'Бюджет' : 'Budget'"
                 ></span>
               </a>
               <a
@@ -233,7 +271,7 @@
                 <span x-text="$store.gym.t('workouts')"></span>
               </a>
               <a
-                href="https://splochev.github.io/budgetBuddy/budget.html"
+                href="https://splochev.github.io/DietBudy/food-manager.html"
                 style="
                   display: flex;
                   align-items: center;
@@ -262,18 +300,15 @@
                   stroke="currentColor"
                   stroke-width="2"
                 >
-                  <rect x="2" y="6" width="20" height="14" rx="2"></rect>
-                  <path d="M2 10h20"></path>
-                  <circle
-                    cx="16"
-                    cy="16"
-                    r="1.5"
-                    fill="currentColor"
-                    stroke="none"
-                  ></circle>
+                  <line x1="6" y1="2" x2="6" y2="9" />
+                  <line x1="9" y1="2" x2="9" y2="9" />
+                  <path d="M6 9 Q7.5 12 9 9" />
+                  <line x1="7.5" y1="12" x2="7.5" y2="22" />
+                  <ellipse cx="16.5" cy="6" rx="2.5" ry="4" />
+                  <line x1="16.5" y1="10" x2="16.5" y2="22" />
                 </svg>
                 <span
-                  x-text="$store.gym.lang === 'bg' ? 'Бюджет' : 'Budget'"
+                  x-text="$store.gym.lang === 'bg' ? 'Храни' : 'Foods'"
                 ></span>
               </a>
             </nav>
@@ -407,7 +442,7 @@
                   "
                 >
                   <a
-                    href="https://splochev.github.io/DietBudy/food-manager.html"
+                    href="https://splochev.github.io/personalBudy/"
                     style="
                       display: flex;
                       align-items: center;
@@ -436,15 +471,53 @@
                       stroke="currentColor"
                       stroke-width="2"
                     >
-                      <line x1="6" y1="2" x2="6" y2="9" />
-                      <line x1="9" y1="2" x2="9" y2="9" />
-                      <path d="M6 9 Q7.5 12 9 9" />
-                      <line x1="7.5" y1="12" x2="7.5" y2="22" />
-                      <ellipse cx="16.5" cy="6" rx="2.5" ry="4" />
-                      <line x1="16.5" y1="10" x2="16.5" y2="22" />
+                      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    <span>Home / Начало</span>
+                  </a>
+                  <a
+                    href="https://splochev.github.io/budgetBuddy/budget.html"
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 10px;
+                      padding: 14px 12px;
+                      border-radius: var(--radius);
+                      font-size: 0.875rem;
+                      font-weight: 600;
+                      color: var(--text3);
+                      text-decoration: none;
+                      transition: var(--trans);
+                    "
+                    onmouseover="
+                      this.style.color = 'var(--text)';
+                      this.style.background = 'var(--surface2)';
+                    "
+                    onmouseout="
+                      this.style.color = 'var(--text3)';
+                      this.style.background = 'transparent';
+                    "
+                  >
+                    <svg
+                      style="width: 16px; height: 16px; flex-shrink: 0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect x="2" y="6" width="20" height="14" rx="2" />
+                      <path d="M2 10h20" />
+                      <circle
+                        cx="16"
+                        cy="16"
+                        r="1.5"
+                        fill="currentColor"
+                        stroke="none"
+                      />
                     </svg>
                     <span
-                      x-text="$store.gym.lang === 'bg' ? 'Храни' : 'Foods'"
+                      x-text="$store.gym.lang === 'bg' ? 'Бюджет' : 'Budget'"
                     ></span>
                   </a>
                   <a
@@ -519,7 +592,7 @@
                     <span x-text="$store.gym.t('workouts')"></span>
                   </a>
                   <a
-                    href="https://splochev.github.io/budgetBuddy/budget.html"
+                    href="https://splochev.github.io/DietBudy/food-manager.html"
                     style="
                       display: flex;
                       align-items: center;
@@ -548,18 +621,15 @@
                       stroke="currentColor"
                       stroke-width="2"
                     >
-                      <rect x="2" y="6" width="20" height="14" rx="2" />
-                      <path d="M2 10h20" />
-                      <circle
-                        cx="16"
-                        cy="16"
-                        r="1.5"
-                        fill="currentColor"
-                        stroke="none"
-                      />
+                      <line x1="6" y1="2" x2="6" y2="9" />
+                      <line x1="9" y1="2" x2="9" y2="9" />
+                      <path d="M6 9 Q7.5 12 9 9" />
+                      <line x1="7.5" y1="12" x2="7.5" y2="22" />
+                      <ellipse cx="16.5" cy="6" rx="2.5" ry="4" />
+                      <line x1="16.5" y1="10" x2="16.5" y2="22" />
                     </svg>
                     <span
-                      x-text="$store.gym.lang === 'bg' ? 'Бюджет' : 'Budget'"
+                      x-text="$store.gym.lang === 'bg' ? 'Храни' : 'Foods'"
                     ></span>
                   </a>
                 </nav>
@@ -651,6 +721,23 @@
                         </button>
                         <button
                           class="btn-icon"
+                          style="width: 22px; height: 22px"
+                          title="Duplicate"
+                          @click.stop="$store.gym.duplicateProgram(program.id)"
+                        >
+                          <svg
+                            style="width: 12px; height: 12px"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <rect x="9" y="9" width="13" height="13" rx="2" />
+                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                          </svg>
+                        </button>
+                        <button
+                          class="btn-icon"
                           style="
                             width: 22px;
                             height: 22px;
@@ -735,12 +822,16 @@
                 </div>
                 <div style="flex: 1; overflow-y: auto; padding: 0 8px 8px">
                   <template
-                    x-for="session in $store.gym.sessions"
+                    x-for="(session, sIdx) in $store.gym.sessions"
                     :key="session.id"
                   >
                     <div
                       class="sidebar-item"
-                      :class="{ active: $store.gym.selectedSessionId === session.id }"
+                      :class="{ active: $store.gym.selectedSessionId === session.id, dragging: $store.gym.sessionDragIdx === sIdx }"
+                      draggable="true"
+                      @dragstart="$store.gym.onSessionDragStart(sIdx)"
+                      @dragover.prevent="$store.gym.onSessionDragOver(sIdx)"
+                      @drop.prevent="$store.gym.onSessionDrop()"
                       @click="$store.gym.selectSession(session.id); if(window.innerWidth<=600) $store.gym.sidebarOpen=false"
                     >
                       <span
@@ -772,6 +863,23 @@
                             <path
                               d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
                             />
+                          </svg>
+                        </button>
+                        <button
+                          class="btn-icon"
+                          style="width: 22px; height: 22px"
+                          title="Duplicate"
+                          @click.stop="$store.gym.duplicateSession(session.id)"
+                        >
+                          <svg
+                            style="width: 12px; height: 12px"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <rect x="9" y="9" width="13" height="13" rx="2" />
+                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
                           </svg>
                         </button>
                         <button

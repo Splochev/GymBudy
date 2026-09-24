@@ -111,6 +111,17 @@ export async function updateSession(uid, pid, sid, changes) {
   );
 }
 
+/** Batch-update the `order` field for all sessions in a program
+ *  (used after drag-and-drop reorder of workout days). */
+export async function batchReorderSessions(uid, pid, sessions) {
+  const batch = writeBatch(db);
+  for (const s of sessions) {
+    const ref = docR(`users/${uid}/programs/${pid}/sessions/${s.id}`);
+    batch.update(ref, { order: s.order });
+  }
+  await batch.commit();
+}
+
 export async function deleteSession(uid, pid, sid) {
   const exSnap = await getDocs(
     col(`users/${uid}/programs/${pid}/sessions/${sid}/exercises`),
@@ -206,14 +217,6 @@ export async function upsertWorkoutLogByDate(uid, logData) {
 
   await setDoc(ref, payload, { merge: true });
   return { id: logId, ...logData };
-}
-
-export async function addWorkoutLog(uid, logData) {
-  const ref = await addDoc(col(`users/${uid}/workoutLogs`), {
-    ...logData,
-    loggedAt: serverTimestamp(),
-  });
-  return { id: ref.id, ...logData };
 }
 
 export async function deleteWorkoutLog(uid, logId) {
