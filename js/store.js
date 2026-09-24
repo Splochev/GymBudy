@@ -663,6 +663,41 @@ export function registerStore(Alpine) {
       this.closeModal();
     },
 
+    /** Rename a session exercise, keeping its history. setHistory lives on the
+     *  exercise doc (keyed by id), but workout logs reference exercises by
+     *  name, so every log of this session is rewritten too. */
+    async renameExercise() {
+      const eid = this.modal.data;
+      const newName = (this.modalForm.name ?? "").trim();
+      const ex = this.exercises.find((e) => e.id === eid);
+      if (!ex || !newName) return;
+      const oldName = ex.name;
+      if (newName === oldName) return this.closeModal();
+      if (this.exercises.some((e) => e.id !== eid && e.name === newName)) {
+        this.showToast("toast_exercise_name_taken", "error");
+        return;
+      }
+
+      const uid = this.user.uid;
+      const sid = this.selectedSessionId;
+      await DB.updateSessionExercise(uid, this.selectedProgramId, sid, eid, {
+        name: newName,
+      });
+      ex.name = newName;
+      await DB.renameExerciseInWorkoutLogs(uid, sid, eid, oldName, newName);
+
+      // Keep the local history cache in sync
+      for (const log of this.workoutLogs) {
+        if (log.sessionId !== sid) continue;
+        log.exercises = (log.exercises ?? []).map((e) =>
+          e.id === eid || e.name === oldName ? { ...e, name: newName } : e,
+        );
+      }
+
+      this.showToast("toast_exercise_renamed");
+      this.closeModal();
+    },
+
     async removeExercise(eid) {
       await DB.deleteSessionExercise(
         this.user.uid,
@@ -1154,6 +1189,12 @@ export function registerStore(Alpine) {
         const s = this.sessions.find((x) => x.id === data);
         if (s) {
           this.modalForm = { name: s.name };
+        }
+      }
+      if (type === "renameExercise") {
+        const ex = this.exercises.find((x) => x.id === data);
+        if (ex) {
+          this.modalForm = { name: ex.name };
         }
       }
     },

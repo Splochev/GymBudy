@@ -18,6 +18,7 @@ import {
   updateDoc,
   deleteDoc,
   query,
+  where,
   orderBy,
   limit,
   writeBatch,
@@ -217,6 +218,34 @@ export async function addWorkoutLog(uid, logData) {
 
 export async function deleteWorkoutLog(uid, logId) {
   await deleteDoc(docR(`users/${uid}/workoutLogs/${logId}`));
+}
+
+/** Rename an exercise inside every workout log of a session so its history
+ *  stays attached. Matches by exercise doc id, or by the old name (older logs
+ *  and edited logs don't store the id). Returns the ids of logs changed. */
+export async function renameExerciseInWorkoutLogs(uid, sid, eid, oldName, newName) {
+  const snap = await getDocs(
+    query(col(`users/${uid}/workoutLogs`), where("sessionId", "==", sid)),
+  );
+  const batch = writeBatch(db);
+  const changed = [];
+  for (const d of snap.docs) {
+    const exercises = d.data().exercises ?? [];
+    let hit = false;
+    const updated = exercises.map((e) => {
+      if (e.id === eid || e.name === oldName) {
+        hit = true;
+        return { ...e, name: newName };
+      }
+      return e;
+    });
+    if (hit) {
+      batch.update(d.ref, { exercises: updated });
+      changed.push(d.id);
+    }
+  }
+  if (changed.length) await batch.commit();
+  return changed;
 }
 
 // ─── LAST SELECTED SESSION (per program) ──────────────────────
