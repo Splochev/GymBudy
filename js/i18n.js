@@ -103,6 +103,10 @@ export const translations = {
     edit_session_title: "Edit Workout Day",
     rename_exercise_title: "Rename Exercise",
     rename_exercise_hint: "All logged sets and history for this exercise will be kept under the new name.",
+    rename_exercise_match: (name) =>
+      `Found in the exercise library: "${name}" — it will be linked.`,
+    rename_exercise_new:
+      "Not in the exercise library yet — it will be added as a new exercise.",
     delete_session_title: "Delete Workout Day",
     add_exercise_title: "Add New Exercise",
     weight_goals_title: "Target",
@@ -328,6 +332,10 @@ export const translations = {
     edit_session_title: "Редактирай тренировъчен ден",
     rename_exercise_title: "Преименувай упражнение",
     rename_exercise_hint: "Всички записани серии и историята на упражнението ще бъдат запазени под новото име.",
+    rename_exercise_match: (name) =>
+      `Намерено в библиотеката с упражнения: "${name}" — ще бъде свързано.`,
+    rename_exercise_new:
+      "Все още го няма в библиотеката с упражнения — ще бъде добавено като ново.",
     delete_session_title: "Изтрий тренировъчен ден",
     add_exercise_title: "Добави ново упражнение",
     weight_goals_title: "Цели за тежести",

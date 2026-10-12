@@ -416,6 +416,50 @@ export function registerStore(Alpine) {
       this.closeModal();
     },
 
+    /** Delete the workout log(s) of the selected day for a date, plus the
+     *  matching setHistory entries (sessionHistory() would otherwise rebuild
+     *  the entry from them). */
+    async deleteHistoryLog() {
+      const date = this.modal.data;
+      const uid = this.user.uid;
+      const pid = this.selectedProgramId;
+      const sid = this.selectedSessionId;
+
+      const logs = this.workoutLogs.filter(
+        (l) => l.sessionId === sid && l.date === date,
+      );
+      await Promise.all(logs.map((l) => DB.deleteWorkoutLog(uid, l.id)));
+
+      await Promise.all(
+        this.exercises.map((ex) => {
+          const history = {};
+          let changed = false;
+          for (const [setKey, entries] of Object.entries(ex.setHistory ?? {})) {
+            const kept = (entries ?? []).filter((e) => e?.date !== date);
+            if (kept.length !== (entries ?? []).length) changed = true;
+            history[setKey] = kept;
+          }
+          if (!changed) return Promise.resolve();
+          ex.setHistory = history;
+          return DB.saveWorkoutDraftToExercise(uid, pid, sid, ex.id, history);
+        }),
+      );
+
+      this.workoutLogs = this.workoutLogs.filter(
+        (l) => !(l.sessionId === sid && l.date === date),
+      );
+      this.selectedLogDates = this.selectedLogDates.filter((d) => d !== date);
+
+      // Today's draft would autosave the log straight back
+      if (date === todayStr()) {
+        this.workoutDraft = {};
+        this._clearDraft(sid);
+      }
+
+      this.showToast("toast_log_deleted");
+      this.closeModal();
+    },
+
     sessionLogs() {
       const logs = this.workoutLogs.filter(
         (log) => log.sessionId === this.selectedSessionId,
@@ -774,27 +818,71 @@ export function registerStore(Alpine) {
       this.closeModal();
     },
 
+    /** Case-insensitive lookup of an exercise in the global library. */
+    findGlobalExercise(name) {
+      const q = (name ?? "").trim().toLowerCase();
+      if (!q) return null;
+      return (
+        this.globalExercises.find((g) => g.name.trim().toLowerCase() === q) ??
+        null
+      );
+    },
+
+    /** Live match for the rename modal's input. */
+    renameMatch() {
+      return this.findGlobalExercise(this.modalForm.name);
+    },
+
     /** Rename a session exercise, keeping its history. setHistory lives on the
      *  exercise doc (keyed by id), but workout logs reference exercises by
-     *  name, so every log of this session is rewritten too. */
+     *  name, so every log of this session is rewritten too. The new name is
+     *  linked to the exercise library: an existing entry is reused (canonical
+     *  name, video, muscle groups), otherwise a new entry is created. */
     async renameExercise() {
       const eid = this.modal.data;
-      const newName = (this.modalForm.name ?? "").trim();
+      const typedName = (this.modalForm.name ?? "").trim();
       const ex = this.exercises.find((e) => e.id === eid);
-      if (!ex || !newName) return;
+      if (!ex || !typedName) return;
       const oldName = ex.name;
-      if (newName === oldName) return this.closeModal();
-      if (this.exercises.some((e) => e.id !== eid && e.name === newName)) {
+
+      const match = this.findGlobalExercise(typedName);
+      const newName = match ? match.name : typedName;
+      if (newName === oldName && (!match || match.id === ex.globalId)) {
+        return this.closeModal();
+      }
+      if (
+        this.exercises.some(
+          (e) =>
+            e.id !== eid &&
+            (e.name === newName || (match && e.globalId === match.id)),
+        )
+      ) {
         this.showToast("toast_exercise_name_taken", "error");
         return;
       }
 
       const uid = this.user.uid;
       const sid = this.selectedSessionId;
-      await DB.updateSessionExercise(uid, this.selectedProgramId, sid, eid, {
-        name: newName,
-      });
-      ex.name = newName;
+      let changes;
+      if (match) {
+        changes = {
+          name: match.name,
+          globalId: match.id,
+          videoLink: match.videoLink ?? "",
+          muscleGroups: match.muscleGroups ?? [],
+        };
+      } else {
+        const created = await DB.addGlobalExercise({
+          name: newName,
+          videoLink: ex.videoLink ?? "",
+          muscleGroups: ex.muscleGroups ?? [],
+          createdBy: uid,
+        });
+        this.globalExercises.push(created);
+        changes = { name: newName, globalId: created.id };
+      }
+      await DB.updateSessionExercise(uid, this.selectedProgramId, sid, eid, changes);
+      Object.assign(ex, changes);
       await DB.renameExerciseInWorkoutLogs(uid, sid, eid, oldName, newName);
 
       // Keep the local history cache in sync

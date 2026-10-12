@@ -2720,6 +2720,24 @@
                                       <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                                     </svg>
                                   </button>
+                                  <!-- Delete button -->
+                                  <button
+                                    @click.stop="$store.gym.openModal('deleteHistoryLog', log.date)"
+                                    class="btn-icon"
+                                    style="flex-shrink: 0; color: var(--danger); margin-right: 8px"
+                                    :title="$store.gym.t('delete_log')"
+                                  >
+                                    <svg
+                                      style="width: 15px; height: 15px"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                    >
+                                      <polyline points="3 6 5 6 21 6" />
+                                      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                    </svg>
+                                  </button>
                                   <svg
                                     :style="'width:16px;height:16px;transition:transform .2s;color:var(--text3);flex-shrink:0;' + (open ? 'transform:rotate(180deg)' : '')"
                                     viewBox="0 0 24 24"
@@ -3186,6 +3204,11 @@
                     style="font-size: 0.75rem; color: var(--text2); margin-top: 6px"
                     x-text="$store.gym.t('rename_exercise_hint')"
                   ></p>
+                  <p
+                    x-show="($store.gym.modalForm.name ?? '').trim()"
+                    :style="'font-size:0.75rem;margin-top:6px;font-weight:600;color:' + ($store.gym.renameMatch() ? 'var(--accent)' : 'var(--text2)')"
+                    x-text="$store.gym.renameMatch() ? $store.gym.t('rename_exercise_match', $store.gym.renameMatch().name) : $store.gym.t('rename_exercise_new')"
+                  ></p>
                 </div>
                 <div
                   style="
@@ -3204,6 +3227,38 @@
                     class="btn btn-primary"
                     @click="$store.gym.renameExercise()"
                     x-text="$store.gym.t('btn_save')"
+                  ></button>
+                </div>
+              </div>
+
+              <!-- Delete History Log -->
+              <div x-show="$store.gym.modal?.type === 'deleteHistoryLog'">
+                <h2
+                  style="
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    margin-bottom: 12px;
+                  "
+                  x-text="$store.gym.t('delete_log_title')"
+                ></h2>
+                <p
+                  style="
+                    color: var(--text2);
+                    margin-bottom: 16px;
+                    font-size: 0.9rem;
+                  "
+                  x-text="$store.gym.t('delete_log_desc', $store.gym.formatDate($store.gym.modal?.data ?? ''))"
+                ></p>
+                <div style="display: flex; justify-content: flex-end; gap: 8px">
+                  <button
+                    class="btn btn-secondary"
+                    @click="$store.gym.closeModal()"
+                    x-text="$store.gym.t('btn_cancel')"
+                  ></button>
+                  <button
+                    class="btn btn-danger"
+                    @click="$store.gym.deleteHistoryLog()"
+                    x-text="$store.gym.t('btn_delete')"
                   ></button>
                 </div>
               </div>
